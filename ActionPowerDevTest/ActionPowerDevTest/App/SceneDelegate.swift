@@ -18,13 +18,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
-        let window = UIWindow(windowScene: windowScene)
-        let launchVC = LaunchScreen()
-        let nav = UINavigationController(rootViewController: launchVC)
-        window.rootViewController = nav
-        window.makeKeyAndVisible()
-        self.window = window
+        let navController = UINavigationController()
+        self.nav = navController
 
+        let window = UIWindow(windowScene: windowScene)
+        window.backgroundColor = .white
+        window.rootViewController = navController
+        self.window = window
+        window.makeKeyAndVisible()
+
+        assembler = Assembler([MainAssembly(navController: navController)])
+        
+        let coordinator = assembler.resolver.resolve(MainCoordinator.self)!
+        coordinator.start(animated: false)
         /*
         // Transition to MainViewController after a short delay (simulate launch screen duration)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
