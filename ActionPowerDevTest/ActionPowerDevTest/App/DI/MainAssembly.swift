@@ -16,13 +16,13 @@ class MainAssembly: Assembly {
     }
     func assemble(container: Container) {
         // MARK: - Coordinator
-        container.register(MainCoordinator.self) { r in
+        container.register(PostsCoordinator.self) { r in
             let nav = r ~> (UINavigationController.self)
-            return MainCoordinator(nav: nav, resolver: r)
+            return PostsCoordinator(nav: nav, resolver: r)
         }
         // MARK: - VC
-        container.register(MainVC.self) { r in
-            let vc = MainVC()
+        container.register(PostsVC.self) { r in
+            let vc = PostsVC()
             return vc
         }
         // MARK: - Navigation

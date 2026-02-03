@@ -1,5 +1,5 @@
 //
-//  BoardApiRequest.swift
+//  PostApiRequest.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -8,7 +8,7 @@
 import Foundation
 
 /// POST /posts/add
-struct BoardCreatePostRequest: Encodable {
+struct PostCreateRequest: Encodable {
     let title: String
     let body: String
     let userId: Int
@@ -20,7 +20,7 @@ struct BoardCreatePostRequest: Encodable {
     }
 }
 /// PUT /posts/{id}
-struct BoardUpdatePostRequest: Encodable {
+struct PostUpdateRequest: Encodable {
     let title: String?
     let body: String?
 

@@ -1,5 +1,5 @@
 //
-//  MainCoordinator.swift
+//  PostsCoordinator.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -9,7 +9,7 @@ import Swinject
 import SwinjectAutoregistration
 import UIKit
 
-class MainCoordinator {
+class PostsCoordinator {
     var nav: UINavigationController
     var resolver: Resolver
     
@@ -19,7 +19,7 @@ class MainCoordinator {
     }
     
     func start(animated: Bool) {
-        if let vc = resolver.resolve(MainVC.self) {
+        if let vc = resolver.resolve(PostsVC.self) {
             nav.isNavigationBarHidden = true
             nav.setViewControllers([vc], animated: animated)
         }

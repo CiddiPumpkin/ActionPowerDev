@@ -1,5 +1,5 @@
 //
-//  BoardAPIController.swift
+//  PostAPIController.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -8,14 +8,14 @@ import Foundation
 import Alamofire
 import Moya
 
-enum BoardAPIController {
+enum PostAPIController {
     case getPosts(limit: Int = 10, skip: Int = 0)
     case getPost(id: Int)
-    case createPost(req: BoardCreatePostRequest)
-    case updatePost(id: Int, req: BoardUpdatePostRequest)
+    case createPost(req: PostCreateRequest)
+    case updatePost(id: Int, req: PostUpdateRequest)
     case deletePost(id: Int)
 }
-extension BoardAPIController: TargetType {
+extension PostAPIController: TargetType {
     var baseURL: URL { URL(string: "https://dummyjson.com")! }
 
     var path: String {

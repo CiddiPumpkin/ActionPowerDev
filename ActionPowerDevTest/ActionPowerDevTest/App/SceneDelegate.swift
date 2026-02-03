@@ -29,13 +29,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         assembler = Assembler([MainAssembly(navController: navController)])
         
-        let coordinator = assembler.resolver.resolve(MainCoordinator.self)!
+        let coordinator = assembler.resolver.resolve(PostsCoordinator.self)!
         coordinator.start(animated: false)
         /*
         // Transition to MainViewController after a short delay (simulate launch screen duration)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let mainVC = MainViewController()
-            nav.setViewControllers([mainVC], animated: true)
+            let PostsVC = MainViewController()
+            nav.setViewControllers([PostsVC], animated: true)
         } */
     }
 

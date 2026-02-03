@@ -1,5 +1,5 @@
 //
-//  MainVC.swift
+//  PostsVC.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/2/26.
@@ -10,11 +10,11 @@ import RxCocoa
 import RxSwift
 import SnapKit
 
-final class MainVC: UIViewController {
+final class PostsVC: UIViewController {
     // MARK: - UI Properties
     
     // MARK: - Properties
-    var coordinator: MainCoordinator?
+    var coordinator: PostsCoordinator?
     let disposeBag = DisposeBag()
     // MARK: - LifeCycle
     override func viewDidLoad() {
@@ -56,5 +56,5 @@ final class MainVC: UIViewController {
     
 }
 
-protocol MainVCDelegate {
+protocol PostsVCDelegate {
 }
