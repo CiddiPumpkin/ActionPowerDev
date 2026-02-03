@@ -1,5 +1,5 @@
 //
-//  MainAssembly.swift
+//  PostsAssembly.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -8,7 +8,7 @@ import UIKit
 import Swinject
 import SwinjectAutoregistration
 
-class MainAssembly: Assembly {
+class PostsAssembly: Assembly {
     private let navController: UINavigationController
     
     init(navController: UINavigationController) {

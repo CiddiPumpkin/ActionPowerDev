@@ -27,7 +27,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         window.makeKeyAndVisible()
 
-        assembler = Assembler([MainAssembly(navController: navController)])
+        assembler = Assembler([PostsAssembly(navController: navController)])
         
         let coordinator = assembler.resolver.resolve(PostsCoordinator.self)!
         coordinator.start(animated: false)
