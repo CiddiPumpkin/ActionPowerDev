@@ -33,7 +33,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             // API
             PostAPIAssembly(),
             // VC
-            PostsAssembly(navController: navController)
+            PostAssembly(navController: navController)
         ])
         
         let coordinator = assembler.resolver.resolve(PostCoordinator.self)!
