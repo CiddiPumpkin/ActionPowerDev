@@ -16,23 +16,23 @@ class PostsAssembly: Assembly {
     }
     func assemble(container: Container) {
         // MARK: - Coordinator
-        container.register(PostsCoordinator.self) { r in
+        container.register(PostCoordinator.self) { r in
             let nav = r ~> UINavigationController.self
-            return PostsCoordinator(nav: nav, resolver: r)
+            return PostCoordinator(nav: nav, resolver: r)
         }
         // MARK: - Repository
-        container.register(PostsRepoType.self) { r in
-            PostsRepo(postAPI: r ~> PostAPIDataSourceType.self)
+        container.register(PostRepoType.self) { r in
+            PostRepo(postAPI: r ~> PostAPIDataSourceType.self)
         }
         // MARK: - VM
-        container.register(PostsVM.self) { r in
-            PostsVM(repo: r ~> PostsRepoType.self)
+        container.register(PostVM.self) { r in
+            PostVM(repo: r ~> PostRepoType.self)
         }
         // MARK: - VC
         container.register(PostsVC.self) { r in
             let vc = PostsVC()
-            vc.coordinator = r ~> PostsCoordinator.self
-            vc.vm = r ~> PostsVM.self
+            vc.coordinator = r ~> PostCoordinator.self
+            vc.vm = r ~> PostVM.self
             return vc
         }
         // MARK: - Navigation

@@ -52,7 +52,7 @@ final class PostsVC: UIViewController {
     // MARK: - Properties
     var coordinator: PostsVCDelegate?
     let disposeBag = DisposeBag()
-    var vm: PostsVM?
+    var vm: PostVM?
     // VM-Input
     private let loadPageRelay = PublishRelay<Int>()
     // MARK: - LifeCycle
@@ -106,7 +106,7 @@ final class PostsVC: UIViewController {
     }
     private func bindVM() {
         guard let vm = self.vm else { return }
-        let input = PostsVM.Input(loadPage: loadPageRelay.asObservable())
+        let input = PostVM.Input(loadPage: loadPageRelay.asObservable())
         let output = vm.transform(input: input)
         
         output.posts
@@ -136,4 +136,6 @@ final class PostsVC: UIViewController {
 }
 
 protocol PostsVCDelegate {
+    func moveToPostCreate()
+    func moveToPostDetail(post: Post)
 }

@@ -1,5 +1,5 @@
 //
-//  PostsVM.swift
+//  PostVM.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-final class PostsVM {
+final class PostVM {
     struct Input {
         /// page: 0부터
         let loadPage: Observable<Int>
@@ -21,10 +21,10 @@ final class PostsVM {
         let errorMessage: Signal<String>
     }
     
-    private let repo: PostsRepoType
+    private let repo: PostRepoType
     private let disposeBag = DisposeBag()
 
-    init(repo: PostsRepoType) {
+    init(repo: PostRepoType) {
         self.repo = repo
     }
 

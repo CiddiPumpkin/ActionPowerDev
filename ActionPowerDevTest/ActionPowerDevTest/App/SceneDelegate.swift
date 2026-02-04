@@ -36,7 +36,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             PostsAssembly(navController: navController)
         ])
         
-        let coordinator = assembler.resolver.resolve(PostsCoordinator.self)!
+        let coordinator = assembler.resolver.resolve(PostCoordinator.self)!
         coordinator.start(animated: false)
     }
 

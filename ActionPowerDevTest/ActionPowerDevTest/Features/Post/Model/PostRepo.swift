@@ -1,5 +1,5 @@
 //
-//  PostsRepo.swift
+//  PostRepo.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -8,11 +8,11 @@
 import Foundation
 import RxSwift
 
-protocol PostsRepoType {
+protocol PostRepoType {
     func getPosts(page: Int, size: Int) -> Single<PostsResponse>
 }
 
-final class PostsRepo: PostsRepoType {
+final class PostRepo: PostRepoType {
     private let postAPI: PostAPIDataSourceType
     
     init(postAPI: PostAPIDataSourceType) {

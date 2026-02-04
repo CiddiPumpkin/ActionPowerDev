@@ -1,5 +1,5 @@
 //
-//  PostsCoordinator.swift
+//  PostCoordinator.swift
 //  ActionPowerDevTest
 //
 //  Created by DavidChoi on 2/3/26.
@@ -9,7 +9,7 @@ import Swinject
 import SwinjectAutoregistration
 import UIKit
 
-class PostsCoordinator {
+class PostCoordinator {
     var nav: UINavigationController
     var resolver: Resolver
     
@@ -25,6 +25,7 @@ class PostsCoordinator {
         }
     }
 }
-extension PostsCoordinator: PostsVCDelegate {
-    
+extension PostCoordinator: PostsVCDelegate {
+    func moveToPostCreate() {}
+    func moveToPostDetail(post: Post) {}
 }
