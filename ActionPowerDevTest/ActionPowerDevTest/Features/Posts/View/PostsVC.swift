@@ -14,7 +14,7 @@ import Then
 final class PostsVC: UIViewController {
     // MARK: - UI Properties
     let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 12, weight: .bold)
+        $0.font = .systemFont(ofSize: 14, weight: .bold)
         $0.textColor = .black
         $0.text = "📄 게시글 리스트"
     }
@@ -28,6 +28,26 @@ final class PostsVC: UIViewController {
         $0.backgroundColor = .clear
         $0.separatorStyle = .none
         $0.contentInsetAdjustmentBehavior = .never
+    }
+    let createButton = UIButton(type: .system).then {
+        $0.setTitle("✍🏻 글쓰기", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 10, weight: .regular)
+        $0.setTitleColor(.label, for: .normal)
+        $0.backgroundColor = UIColor.systemGray6
+        $0.layer.borderColor = UIColor.lightGray.cgColor
+        $0.layer.borderWidth = 1
+        $0.layer.cornerRadius = 10
+        $0.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
+    }
+    let dashboardButton = UIButton(type: .system).then {
+        $0.setTitle("📊 대시보드", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 10, weight: .regular)
+        $0.setTitleColor(.label, for: .normal)
+        $0.backgroundColor = UIColor.systemGray6
+        $0.layer.borderColor = UIColor.lightGray.cgColor
+        $0.layer.borderWidth = 1
+        $0.layer.cornerRadius = 10
+        $0.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
     }
     // MARK: - Properties
     var coordinator: PostsVCDelegate?
@@ -57,6 +77,18 @@ final class PostsVC: UIViewController {
             $0.top.equalTo(titleLabel.snp.bottom).offset(8)
             $0.left.right.equalToSuperview()
             $0.height.equalTo(1)
+        }
+        // dashBoardButton
+        view.addSubview(dashboardButton)
+        dashboardButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.right.equalToSuperview().inset(12)
+        }
+        // createButton
+        view.addSubview(createButton)
+        createButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.right.equalTo(dashboardButton.snp.left).offset(-6)
         }
         // tableView
         view.addSubview(tableView)
