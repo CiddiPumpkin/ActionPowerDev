@@ -126,7 +126,12 @@ final class PostsVC: UIViewController {
         loadPageRelay.accept(0)
     }
     private func bindView() {
-        
+        // 글쓰기 버튼 탭
+        createButton.rx.tap
+            .subscribe(with: self) { owner, _ in
+                owner.coordinator?.moveToPostCreate()
+            }
+            .disposed(by: disposeBag)
     }
     private func bindNav() {
         

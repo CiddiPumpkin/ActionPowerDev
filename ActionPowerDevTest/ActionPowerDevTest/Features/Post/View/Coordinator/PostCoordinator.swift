@@ -26,6 +26,15 @@ class PostCoordinator {
     }
 }
 extension PostCoordinator: PostsVCDelegate {
-    func moveToPostCreate() {}
+    func moveToPostCreate() {
+        if let vc = resolver.resolve(PostCreateVC.self) {
+            vc.modalPresentationStyle = .automatic
+            vc.modalTransitionStyle = .crossDissolve
+            nav.present(vc, animated: true)
+        }
+    }
     func moveToPostDetail(post: Post) {}
 }
+extension PostCoordinator: PostCreateVCDelegate {
+}
+
