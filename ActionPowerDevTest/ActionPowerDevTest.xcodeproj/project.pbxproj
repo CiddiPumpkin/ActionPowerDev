@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7235F7D62F31B8BC006F2126 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 7235F7D52F31B8BC006F2126 /* Realm */; };
 		7235F7D82F31B8BC006F2126 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 7235F7D72F31B8BC006F2126 /* RealmSwift */; };
 		DEED543E2F30D7070047724B /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = DEED543D2F30D7070047724B /* RxCocoa */; };
 		DEED54402F30D7070047724B /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DEED543F2F30D7070047724B /* RxSwift */; };
@@ -54,7 +53,6 @@
 				DEED54432F30D7310047724B /* SnapKit in Frameworks */,
 				DEED544E2F30D7BA0047724B /* Swinject in Frameworks */,
 				DEED54512F30D7D20047724B /* Then in Frameworks */,
-				7235F7D62F31B8BC006F2126 /* Realm in Frameworks */,
 				DEED54402F30D7070047724B /* RxSwift in Frameworks */,
 				DEED54542F30D8030047724B /* SwinjectAutoregistration in Frameworks */,
 				DEED544B2F30D78F0047724B /* Alamofire in Frameworks */,
@@ -112,7 +110,6 @@
 				DEED544D2F30D7BA0047724B /* Swinject */,
 				DEED54502F30D7D20047724B /* Then */,
 				DEED54532F30D8030047724B /* SwinjectAutoregistration */,
-				7235F7D52F31B8BC006F2126 /* Realm */,
 				7235F7D72F31B8BC006F2126 /* RealmSwift */,
 			);
 			productName = ActionPowerDevTest;
@@ -456,11 +453,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		7235F7D52F31B8BC006F2126 /* Realm */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7235F7D42F31B8BC006F2126 /* XCRemoteSwiftPackageReference "realm-swift" */;
-			productName = Realm;
-		};
 		7235F7D72F31B8BC006F2126 /* RealmSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7235F7D42F31B8BC006F2126 /* XCRemoteSwiftPackageReference "realm-swift" */;

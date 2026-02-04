@@ -8,7 +8,6 @@
 import Foundation
 import RealmSwift
 
-
 enum PendingStatus: String, PersistableEnum {
     case none
     case create
