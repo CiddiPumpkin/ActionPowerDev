@@ -25,3 +25,6 @@ class PostsCoordinator {
         }
     }
 }
+extension PostsCoordinator: PostsVCDelegate {
+    
+}
