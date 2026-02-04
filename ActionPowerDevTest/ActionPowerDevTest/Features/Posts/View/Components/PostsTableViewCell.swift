@@ -17,15 +17,15 @@ class PostsTableViewCell: UITableViewCell {
     let containerView = UIView().then {
         $0.layer.cornerRadius = 12
         $0.layer.borderWidth = 1
-        $0.layer.borderColor = UIColor.darkGray.cgColor
+        $0.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
     }
     let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 18, weight: .bold)
+        $0.font = .systemFont(ofSize: 12, weight: .semibold)
         $0.textColor = .black
         $0.numberOfLines = 0
     }
     let bodyLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.font = .systemFont(ofSize: 10, weight: .regular)
         $0.textColor = .black
         $0.numberOfLines = 0
     }
@@ -54,20 +54,21 @@ class PostsTableViewCell: UITableViewCell {
         // containerView
         contentView.addSubview(containerView)
         containerView.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(1)
+            $0.left.top.right.equalToSuperview()
+            $0.bottom.equalToSuperview().inset(8)
         }
         // titleLabel
         containerView.addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
-            $0.top.equalToSuperview()
+            $0.top.equalToSuperview().inset(8)
             $0.left.right.equalToSuperview().inset(12)
         }
         // bodyLabel
         containerView.addSubview(bodyLabel)
         bodyLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(6)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(4)
             $0.left.right.equalToSuperview().inset(12)
-            $0.bottom.equalToSuperview().inset(4)
+            $0.bottom.equalToSuperview().inset(8)
         }
     }
     // MARK: - Configure

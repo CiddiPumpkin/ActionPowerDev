@@ -13,11 +13,21 @@ import Then
 
 final class PostsVC: UIViewController {
     // MARK: - UI Properties
+    let titleLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 12, weight: .bold)
+        $0.textColor = .black
+        $0.text = "📄 게시글 리스트"
+    }
+    let separatorView = UIView().then {
+        $0.backgroundColor = .lightGray
+    }
     let tableView = UITableView().then {
         $0.register(PostsTableViewCell.self, forCellReuseIdentifier: "cell")
-        $0.estimatedRowHeight = 52
+        $0.estimatedRowHeight = 40
+        $0.rowHeight = UITableView.automaticDimension
         $0.backgroundColor = .clear
         $0.separatorStyle = .none
+        $0.contentInsetAdjustmentBehavior = .never
     }
     // MARK: - Properties
     var coordinator: PostsVCDelegate?
@@ -35,10 +45,25 @@ final class PostsVC: UIViewController {
     private func setupUI() {
         // self
         view.backgroundColor = .white
+        // titleLabel
+        view.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.left.top.equalToSuperview().inset(12)
+            $0.right.equalToSuperview()
+        }
+        // separatorView
+        view.addSubview(separatorView)
+        separatorView.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+            $0.left.right.equalToSuperview()
+            $0.height.equalTo(1)
+        }
         // tableView
         view.addSubview(tableView)
         tableView.snp.makeConstraints {
-            $0.left.top.right.bottom.equalToSuperview()
+            $0.top.equalTo(separatorView.snp.bottom).offset(4)
+            $0.left.right.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview()
         }
     }
     // MARK: - Bind
