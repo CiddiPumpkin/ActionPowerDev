@@ -38,12 +38,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let coordinator = assembler.resolver.resolve(PostsCoordinator.self)!
         coordinator.start(animated: false)
-        /*
-        // Transition to MainViewController after a short delay (simulate launch screen duration)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let PostsVC = MainViewController()
-            nav.setViewControllers([PostsVC], animated: true)
-        } */
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
