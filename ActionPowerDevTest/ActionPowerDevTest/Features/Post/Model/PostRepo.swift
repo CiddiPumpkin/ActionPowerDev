@@ -44,6 +44,10 @@ final class PostRepo: PostRepoType {
     func updatePost(id: Int, title: String? = nil, body: String? = nil) -> Single<Post> {
         let request = PostUpdateRequest(title: title, body: body)
         return postAPI.updatePost(id: id, req: request)
+            .do(onSuccess: { [weak self] post in
+                // API 성공 시 로컬 DB에 업데이트
+                self?.updatePostToLocal(post)
+            })
     }
     
     func deletePost(id: Int) -> Single<PostDeleteResponse> {
@@ -70,5 +74,26 @@ final class PostRepo: PostRepoType {
         postObj.syncStatus = .sync
         
         db.create(postObj)
+    }
+    
+    /// API로 수정된 게시글을 로컬 DB에 업데이트
+    func updatePostToLocal(_ post: Post) {
+        // serverId로 로컬 DB에서 찾아서 업데이트
+        if let existingPost = db.fetchVisibleSortedByUpdatedDesc().first(where: { $0.serverId == post.id }) {
+            db.update(
+                localId: existingPost.localId,
+                title: post.title,
+                body: post.body,
+                serverId: post.id,
+                isDeleted: nil,
+                pendingStatus: nil,
+                syncStatus: .sync,
+                lastSyncError: nil,
+                updatedDate: Date()
+            )
+        } else {
+            // 없으면 새로 생성
+            savePostToLocal(post)
+        }
     }
 }

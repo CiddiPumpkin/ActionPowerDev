@@ -87,6 +87,10 @@ final class PostVM {
     func createPost(title: String, body: String, userId: Int = 1) -> Single<Post> {
         return repo.createPost(title: title, body: body, userId: userId)
     }
+    
+    func updatePost(id: Int, title: String?, body: String?) -> Single<Post> {
+        return repo.updatePost(id: id, title: title, body: body)
+    }
     /// API에서 가져온 게시글과 로컬 DB 게시글을 병합
     /// 로컬 DB 게시글이 최상단에 위치하도록 정렬
     func mergeWithLocalPosts(apiPosts: [Post]) -> [Post] {

@@ -230,13 +230,29 @@ class PostDetailVC: UIViewController {
                     contentTextView.rx.text.orEmpty
                 )
             )
-            .subscribe(with: self) { owner, data in
+            .flatMapLatest { [weak self] data -> Observable<Post> in
+                guard let self = self, let vm = self.vm else {
+                    return .empty()
+                }
                 let (title, body) = data
                 
-                // TODO: 수정 로직 구현
-                print("수정 - ID: \(owner.postId), Title: \(title), Body: \(body)")
+                // 로딩 표시
+                self.editButton.isEnabled = false
                 
-                owner.dismiss(animated: true)
+                return vm.updatePost(id: self.postId, title: title, body: body)
+                    .asObservable()
+                    .catch { error in
+                        // 에러 처리
+                        self.showErrorAlert(message: error.localizedDescription)
+                        return .empty()
+                    }
+            }
+            .subscribe(with: self) { owner, post in
+                print("게시글 수정 성공: \(post)")
+                owner.coordinator?.didUpdatePost()
+                owner.showSuccessAlert(message: "게시글이 수정되었습니다.") {
+                    owner.dismiss(animated: true)
+                }
             }
             .disposed(by: disposeBag)
         
@@ -265,8 +281,25 @@ class PostDetailVC: UIViewController {
     
     // MARK: - Functions
     
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self] _ in
+            self?.editButton.isEnabled = true
+            self?.editButton.setTitle("수정", for: .normal)
+        })
+        present(alert, animated: true)
+    }
+    
+    private func showSuccessAlert(message: String, completion: @escaping () -> Void) {
+        let alert = UIAlertController(title: "성공", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+            completion()
+        })
+        present(alert, animated: true)
+    }
 }
 
 protocol PostDetailVCDelegate {
+    func didUpdatePost() // 게시글 수정 완료
 }
 
