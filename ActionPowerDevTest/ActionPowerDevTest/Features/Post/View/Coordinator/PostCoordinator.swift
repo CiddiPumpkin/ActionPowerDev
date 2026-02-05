@@ -27,11 +27,17 @@ class PostCoordinator {
 }
 extension PostCoordinator: PostsVCDelegate {
     func moveToPostCreate() {
-        if let vc = resolver.resolve(PostCreateVC.self) {
-            vc.modalPresentationStyle = .automatic
-            vc.modalTransitionStyle = .crossDissolve
-            nav.present(vc, animated: true)
+        guard let vc = resolver.resolve(PostCreateVC.self) else { return }
+
+        vc.modalPresentationStyle = .pageSheet
+
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.preferredCornerRadius = 16
+            sheet.prefersGrabberVisible = true
         }
+
+        nav.present(vc, animated: true)
     }
     func moveToPostDetail(post: Post) {}
 }

@@ -17,12 +17,17 @@ class PostCreateVC: UIViewController {
     // MARK: - UI Properties
     let containerView = UIView().then {
         $0.backgroundColor = .white
-        $0.layer.cornerRadius = 12
+        $0.layer.cornerRadius = 8
     }
     let titleTitleLabel = UILabel().then {
         $0.text = "제목"
-        $0.font = .systemFont(ofSize: 16, weight: .semibold)
+        $0.font = .systemFont(ofSize: 14, weight: .semibold)
         $0.textColor = .label
+    }
+    let closeButton = UIButton(type: .system).then {
+        $0.setImage(UIImage(systemName: "xmark"), for: .normal)
+        $0.tintColor = .black
+        $0.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
     }
     let textFieldContainerView = UIView().then {
         $0.backgroundColor = .white
@@ -33,16 +38,16 @@ class PostCreateVC: UIViewController {
     let titleTextField = UITextField().then {
         $0.placeholder = "제목을 입력하세요"
         $0.borderStyle = .none
-        $0.font = .systemFont(ofSize: 14)
+        $0.font = .systemFont(ofSize: 12)
         $0.backgroundColor = .clear
     }
     let contentTitleLabel = UILabel().then {
         $0.text = "내용"
-        $0.font = .systemFont(ofSize: 16, weight: .semibold)
+        $0.font = .systemFont(ofSize: 14, weight: .semibold)
         $0.textColor = .label
     }
     let contentTextView = UITextView().then {
-        $0.font = .systemFont(ofSize: 14)
+        $0.font = .systemFont(ofSize: 12)
         $0.layer.borderColor = UIColor.systemGray4.cgColor
         $0.layer.borderWidth = 1
         $0.layer.cornerRadius = 8
@@ -51,7 +56,7 @@ class PostCreateVC: UIViewController {
     }
     let placeholderLabel = UILabel().then {
         $0.text = "내용을 입력하세요"
-        $0.font = .systemFont(ofSize: 14)
+        $0.font = .systemFont(ofSize: 12)
         $0.textColor = .systemGray3
     }
     let buttonStackView = UIStackView().then {
@@ -61,7 +66,7 @@ class PostCreateVC: UIViewController {
     }
     let cancelButton = UIButton(type: .system).then {
         $0.setTitle("취소", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
         $0.setTitleColor(.systemRed, for: .normal)
         $0.backgroundColor = .systemGray6
         $0.layer.cornerRadius = 10
@@ -70,7 +75,7 @@ class PostCreateVC: UIViewController {
     }
     let saveButton = UIButton(type: .system).then {
         $0.setTitle("저장", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
         $0.setTitleColor(.white, for: .normal)
         $0.setTitleColor(.white.withAlphaComponent(0.5), for: .disabled)
         $0.backgroundColor = .systemBlue
@@ -104,10 +109,17 @@ class PostCreateVC: UIViewController {
             $0.left.right.equalToSuperview().inset(16)
             $0.height.equalTo(16)
         }
+        // closeButton
+        containerView.addSubview(closeButton)
+        closeButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleTitleLabel.snp.centerY).offset(-8)
+            $0.right.equalToSuperview().inset(12)
+            $0.width.height.equalTo(28)
+        }
         // textFieldContainerView
         containerView.addSubview(textFieldContainerView)
         textFieldContainerView.snp.makeConstraints {
-            $0.top.equalTo(titleTitleLabel.snp.bottom)
+            $0.top.equalTo(titleTitleLabel.snp.bottom).offset(8)
             $0.left.right.equalToSuperview().inset(16)
             $0.height.equalTo(44)
         }
@@ -116,20 +128,19 @@ class PostCreateVC: UIViewController {
         titleTextField.snp.makeConstraints {
             $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8))
         }
-        
         // contentTitleLabel
         containerView.addSubview(contentTitleLabel)
         contentTitleLabel.snp.makeConstraints {
             $0.top.equalTo(textFieldContainerView.snp.bottom).offset(16)
             $0.left.right.equalToSuperview().inset(16)
+            $0.height.equalTo(16)
         }
-        
         // contentTextView
         containerView.addSubview(contentTextView)
         contentTextView.snp.makeConstraints {
-            $0.top.equalTo(contentTitleLabel.snp.bottom)
+            $0.top.equalTo(contentTitleLabel.snp.bottom).offset(8)
             $0.left.right.equalToSuperview().inset(16)
-            $0.height.equalTo(150)
+            //$0.height.equalTo(150)
         }
         
         // placeholderLabel
@@ -147,8 +158,8 @@ class PostCreateVC: UIViewController {
         buttonStackView.snp.makeConstraints {
             $0.top.equalTo(contentTextView.snp.bottom).offset(20)
             $0.left.right.equalToSuperview().inset(16)
-            $0.height.equalTo(50)
-            $0.bottom.equalToSuperview().offset(-20)
+            $0.height.equalTo(30)
+            $0.bottom.equalToSuperview().inset(20)
         }
     }
     
@@ -192,6 +203,11 @@ class PostCreateVC: UIViewController {
         
         // 취소 버튼 탭
         cancelButton.rx.tap
+            .subscribe(with: self) { owner, _ in
+                owner.dismiss(animated: true)
+            }
+            .disposed(by: disposeBag)
+        closeButton.rx.tap
             .subscribe(with: self) { owner, _ in
                 owner.dismiss(animated: true)
             }
