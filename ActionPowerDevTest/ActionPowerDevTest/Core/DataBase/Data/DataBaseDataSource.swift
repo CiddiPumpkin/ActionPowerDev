@@ -4,15 +4,31 @@
 //
 //  Created by DavidChoi on 2/3/26.
 //
-
-
 import Foundation
 import RealmSwift
 
-import Foundation
-import RealmSwift
+protocol DataBaseDataSourceType {
+    func create(_ post: PostObj)
+    func create(_ posts: [PostObj])
+    func update(
+        localId: String,
+        title: String?,
+        body: String?,
+        serverId: Int?,
+        isDeleted: Bool?,
+        pendingStatus: PendingStatus?,
+        syncStatus: SyncStatus?,
+        lastSyncError: String?,
+        updatedDate: Date
+    )
+    func fetch(localId: String) -> PostObj?
+    func fetchVisibleSortedByUpdatedDesc() -> [PostObj]
+    func fetchPendingPosts() -> [PostObj]
+    func fetchRecentTop5() -> [PostObj]
+    func delete(localId: String)
+}
 
-final class DataBaseDataSource {
+final class DataBaseDataSource: DataBaseDataSourceType {
     init() {}
     static func configureMigration() {
         let config = Realm.Configuration(
