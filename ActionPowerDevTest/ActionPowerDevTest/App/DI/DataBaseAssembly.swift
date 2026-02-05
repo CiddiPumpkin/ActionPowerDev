@@ -12,7 +12,7 @@ import SwinjectAutoregistration
 class DataBaseAssembly: Assembly {
     func assemble(container: Container) {
         // MARK: - DataSource
-        container.register(DataBaseDataSource.self) { r in
+        container.register(DataBaseDataSourceType.self) { r in
             DataBaseDataSource()
         }.inObjectScope(.container)
     }

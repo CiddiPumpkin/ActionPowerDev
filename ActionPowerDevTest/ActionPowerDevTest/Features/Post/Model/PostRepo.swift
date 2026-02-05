@@ -18,7 +18,7 @@ protocol PostRepoType {
 final class PostRepo: PostRepoType {
     private let postAPI: PostAPIDataSourceType
     
-    init(postAPI: PostAPIDataSourceType) {
+    init(postAPI: PostAPIDataSourceType, db: DataBaseDataSourceType) {
         self.postAPI = postAPI
     }
     
