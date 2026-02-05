@@ -52,6 +52,10 @@ final class PostRepo: PostRepoType {
     
     func deletePost(id: Int) -> Single<PostDeleteResponse> {
         return postAPI.deletePost(id: id)
+            .do(onSuccess: { [weak self] response in
+                // API 성공 시 로컬 DB에서 삭제
+                self?.deletePostFromLocal(serverId: response.id)
+            })
     }
     
     // MARK: - Local DB
@@ -84,16 +88,24 @@ final class PostRepo: PostRepoType {
                 localId: existingPost.localId,
                 title: post.title,
                 body: post.body,
-                serverId: post.id,
+                serverId: nil,
                 isDeleted: nil,
                 pendingStatus: nil,
-                syncStatus: .sync,
+                syncStatus: nil,
                 lastSyncError: nil,
                 updatedDate: Date()
             )
         } else {
             // 없으면 새로 생성
             savePostToLocal(post)
+        }
+    }
+    
+    /// API로 삭제된 게시글을 로컬 DB에서 삭제
+    func deletePostFromLocal(serverId: Int) {
+        // serverId로 로컬 DB에서 찾아서 삭제
+        if let existingPost = db.fetchVisibleSortedByUpdatedDesc().first(where: { $0.serverId == serverId }) {
+            db.delete(localId: existingPost.localId)
         }
     }
 }

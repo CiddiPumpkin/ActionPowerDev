@@ -91,6 +91,10 @@ final class PostVM {
     func updatePost(id: Int, title: String?, body: String?) -> Single<Post> {
         return repo.updatePost(id: id, title: title, body: body)
     }
+    
+    func deletePost(id: Int) -> Single<PostDeleteResponse> {
+        return repo.deletePost(id: id)
+    }
     /// API에서 가져온 게시글과 로컬 DB 게시글을 병합
     /// 로컬 DB 게시글이 최상단에 위치하도록 정렬
     func mergeWithLocalPosts(apiPosts: [Post]) -> [Post] {

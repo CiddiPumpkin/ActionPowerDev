@@ -65,4 +65,10 @@ extension PostCoordinator: PostDetailVCDelegate {
             postsVC.refreshPosts()
         }
     }
+    
+    func didDeletePost() {
+        if let postsVC = nav.viewControllers.first as? PostsVC {
+            postsVC.refreshPosts()
+        }
+    }
 }

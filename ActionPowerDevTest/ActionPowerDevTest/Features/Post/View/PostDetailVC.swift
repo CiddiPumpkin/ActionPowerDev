@@ -267,11 +267,27 @@ class PostDetailVC: UIViewController {
                 )
                 
                 alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-                alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { _ in
-                    // TODO: 삭제 로직 구현
-                    print("삭제 - ID: \(owner.postId)")
+                alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak owner] _ in
+                    guard let owner = owner, let vm = owner.vm else { return }
                     
-                    owner.dismiss(animated: true)
+                    // 로딩 표시
+                    owner.deleteButton.isEnabled = false
+                    
+                    vm.deletePost(id: owner.postId)
+                        .asObservable()
+                        .catch { error in
+                            // 에러 처리
+                            owner.showDeleteErrorAlert(message: error.localizedDescription)
+                            return .empty()
+                        }
+                        .subscribe(onNext: { response in
+                            print("게시글 삭제 성공: \(response)")
+                            owner.coordinator?.didDeletePost()
+                            owner.showSuccessAlert(message: "게시글이 삭제되었습니다.") {
+                                owner.dismiss(animated: true)
+                            }
+                        })
+                        .disposed(by: owner.disposeBag)
                 })
                 
                 owner.present(alert, animated: true)
@@ -290,6 +306,14 @@ class PostDetailVC: UIViewController {
         present(alert, animated: true)
     }
     
+    private func showDeleteErrorAlert(message: String) {
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self] _ in
+            self?.deleteButton.isEnabled = true
+        })
+        present(alert, animated: true)
+    }
+    
     private func showSuccessAlert(message: String, completion: @escaping () -> Void) {
         let alert = UIAlertController(title: "성공", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
@@ -301,5 +325,6 @@ class PostDetailVC: UIViewController {
 
 protocol PostDetailVCDelegate {
     func didUpdatePost() // 게시글 수정 완료
+    func didDeletePost() // 게시글 삭제 완료
 }
 
