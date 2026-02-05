@@ -140,20 +140,16 @@ class PostCreateVC: UIViewController {
         contentTextView.snp.makeConstraints {
             $0.top.equalTo(contentTitleLabel.snp.bottom).offset(8)
             $0.left.right.equalToSuperview().inset(16)
-            //$0.height.equalTo(150)
         }
-        
         // placeholderLabel
         contentTextView.addSubview(placeholderLabel)
         placeholderLabel.snp.makeConstraints {
             $0.top.equalToSuperview().offset(8)
             $0.left.equalToSuperview().offset(8)
         }
-        
         // buttonStackView
         buttonStackView.addArrangedSubview(cancelButton)
         buttonStackView.addArrangedSubview(saveButton)
-        
         containerView.addSubview(buttonStackView)
         buttonStackView.snp.makeConstraints {
             $0.top.equalTo(contentTextView.snp.bottom).offset(20)

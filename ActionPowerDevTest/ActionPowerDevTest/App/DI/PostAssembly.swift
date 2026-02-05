@@ -41,6 +41,15 @@ class PostAssembly: Assembly {
             vc.vm = r ~> PostVM.self
             return vc
         }
+        container.register(PostDetailVC.self) { (r, post: Post) in
+            let vc = PostDetailVC()
+            vc.postId = post.id
+            vc.postTitle = post.title
+            vc.postBody = post.body
+            vc.coordinator = r ~> PostCoordinator.self
+            vc.vm = r ~> PostVM.self
+            return vc
+        }
         // MARK: - Navigation
         container.register(UINavigationController.self) { _ in
             self.navController

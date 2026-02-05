@@ -5,3 +5,239 @@
 //  Created by DavidChoi on 2/4/26.
 //
 
+import UIKit
+import RxCocoa
+import RxSwift
+import RxRelay
+import SnapKit
+import Then
+
+class PostDetailVC: UIViewController {
+    // MARK: - UI Properties
+    let containerView = UIView().then {
+        $0.backgroundColor = .white
+        $0.layer.cornerRadius = 8
+    }
+    let titleTitleLabel = UILabel().then {
+        $0.text = "제목"
+        $0.font = .systemFont(ofSize: 14, weight: .semibold)
+        $0.textColor = .label
+    }
+    let closeButton = UIButton(type: .system).then {
+        $0.setImage(UIImage(systemName: "xmark"), for: .normal)
+        $0.tintColor = .black
+        $0.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+    }
+    let textFieldContainerView = UIView().then {
+        $0.backgroundColor = .white
+        $0.layer.borderColor = UIColor.systemGray4.cgColor
+        $0.layer.borderWidth = 1
+        $0.layer.cornerRadius = 8
+    }
+    let titleTextField = UITextField().then {
+        $0.placeholder = "제목을 입력하세요"
+        $0.borderStyle = .none
+        $0.font = .systemFont(ofSize: 12)
+        $0.backgroundColor = .clear
+    }
+    let contentTitleLabel = UILabel().then {
+        $0.text = "내용"
+        $0.font = .systemFont(ofSize: 14, weight: .semibold)
+        $0.textColor = .label
+    }
+    let contentTextView = UITextView().then {
+        $0.font = .systemFont(ofSize: 12)
+        $0.layer.borderColor = UIColor.systemGray4.cgColor
+        $0.layer.borderWidth = 1
+        $0.layer.cornerRadius = 8
+        $0.backgroundColor = .white
+        $0.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
+    }
+    let placeholderLabel = UILabel().then {
+        $0.text = "내용을 입력하세요"
+        $0.font = .systemFont(ofSize: 12)
+        $0.textColor = .systemGray3
+    }
+    let buttonStackView = UIStackView().then {
+        $0.axis = .horizontal
+        $0.distribution = .fillEqually
+        $0.spacing = 12
+    }
+    let editButton = UIButton(type: .system).then {
+        $0.setTitle("수정", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
+        $0.setTitleColor(.systemBlue, for: .normal)
+        $0.backgroundColor = .systemGray6
+        $0.layer.cornerRadius = 10
+        $0.layer.borderWidth = 1
+        $0.layer.borderColor = UIColor.systemGray4.cgColor
+    }
+    let deleteButton = UIButton(type: .system).then {
+        $0.setTitle("삭제", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = .systemRed
+        $0.layer.cornerRadius = 10
+    }
+    
+    // MARK: - Properties
+    var coordinator: PostDetailVCDelegate?
+    let disposeBag = DisposeBag()
+    var vm: PostVM?
+    
+    // 전달받을 데이터
+    var postId: Int = 0
+    var postTitle: String = ""
+    var postBody: String = ""
+    
+    // MARK: - LifeCycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        setupInitialData()
+        bind()
+    }
+    
+    // MARK: - Setup UI
+    private func setupUI() {
+        // self
+        view.backgroundColor = .white
+        // containerView
+        view.addSubview(containerView)
+        containerView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        // titleTitleLabel
+        containerView.addSubview(titleTitleLabel)
+        titleTitleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(20)
+            $0.left.right.equalToSuperview().inset(16)
+            $0.height.equalTo(16)
+        }
+        // closeButton
+        containerView.addSubview(closeButton)
+        closeButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleTitleLabel.snp.centerY).offset(-8)
+            $0.right.equalToSuperview().inset(12)
+            $0.width.height.equalTo(28)
+        }
+        // textFieldContainerView
+        containerView.addSubview(textFieldContainerView)
+        textFieldContainerView.snp.makeConstraints {
+            $0.top.equalTo(titleTitleLabel.snp.bottom).offset(8)
+            $0.left.right.equalToSuperview().inset(16)
+            $0.height.equalTo(44)
+        }
+        // titleTextField
+        textFieldContainerView.addSubview(titleTextField)
+        titleTextField.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8))
+        }
+        // contentTitleLabel
+        containerView.addSubview(contentTitleLabel)
+        contentTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(textFieldContainerView.snp.bottom).offset(16)
+            $0.left.right.equalToSuperview().inset(16)
+            $0.height.equalTo(16)
+        }
+        // contentTextView
+        containerView.addSubview(contentTextView)
+        contentTextView.snp.makeConstraints {
+            $0.top.equalTo(contentTitleLabel.snp.bottom).offset(8)
+            $0.left.right.equalToSuperview().inset(16)
+        }
+        // placeholderLabel
+        contentTextView.addSubview(placeholderLabel)
+        placeholderLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(8)
+            $0.left.equalToSuperview().offset(8)
+        }
+        // buttonStackView
+        buttonStackView.addArrangedSubview(editButton)
+        buttonStackView.addArrangedSubview(deleteButton)
+        containerView.addSubview(buttonStackView)
+        buttonStackView.snp.makeConstraints {
+            $0.top.equalTo(contentTextView.snp.bottom).offset(20)
+            $0.left.right.equalToSuperview().inset(16)
+            $0.height.equalTo(30)
+            $0.bottom.equalToSuperview().inset(20)
+        }
+    }
+    
+    // MARK: - Setup Initial Data
+    private func setupInitialData() {
+        titleTextField.text = postTitle
+        contentTextView.text = postBody
+        placeholderLabel.isHidden = !postBody.isEmpty
+    }
+    
+    // MARK: - Bind
+    private func bind() {
+        bindView()
+        bindVM()
+    }
+    
+    private func bindVM() {
+        
+    }
+    
+    private func bindView() {
+        // placeholder 처리
+        contentTextView.rx.text.orEmpty
+            .map { !$0.isEmpty }
+            .bind(to: placeholderLabel.rx.isHidden)
+            .disposed(by: disposeBag)
+        // 닫기 버튼 탭
+        closeButton.rx.tap
+            .subscribe(with: self) { owner, _ in
+                owner.dismiss(animated: true)
+            }
+            .disposed(by: disposeBag)
+        // 수정 버튼 탭
+        editButton.rx.tap
+            .withLatestFrom(
+                Observable.combineLatest(
+                    titleTextField.rx.text.orEmpty,
+                    contentTextView.rx.text.orEmpty
+                )
+            )
+            .subscribe(with: self) { owner, data in
+                let (title, body) = data
+                
+                // TODO: 수정 로직 구현
+                print("수정 - ID: \(owner.postId), Title: \(title), Body: \(body)")
+                
+                owner.dismiss(animated: true)
+            }
+            .disposed(by: disposeBag)
+        
+        // 삭제 버튼 탭
+        deleteButton.rx.tap
+            .subscribe(with: self) { owner, _ in
+                // 삭제 확인 알림
+                let alert = UIAlertController(
+                    title: "게시물 삭제",
+                    message: "정말 이 게시물을 삭제하시겠습니까?",
+                    preferredStyle: .alert
+                )
+                
+                alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+                alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { _ in
+                    // TODO: 삭제 로직 구현
+                    print("삭제 - ID: \(owner.postId)")
+                    
+                    owner.dismiss(animated: true)
+                })
+                
+                owner.present(alert, animated: true)
+            }
+            .disposed(by: disposeBag)
+    }
+    
+    // MARK: - Functions
+    
+}
+
+protocol PostDetailVCDelegate {
+}
+

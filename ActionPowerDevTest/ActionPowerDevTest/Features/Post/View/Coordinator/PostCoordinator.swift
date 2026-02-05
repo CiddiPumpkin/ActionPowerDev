@@ -39,8 +39,20 @@ extension PostCoordinator: PostsVCDelegate {
 
         nav.present(vc, animated: true)
     }
-    func moveToPostDetail(post: Post) {}
+    func moveToPostDetail(post: Post) {
+        guard let vc = resolver.resolve(PostDetailVC.self, argument: post) else { return }
+        
+        vc.modalPresentationStyle = .pageSheet
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.preferredCornerRadius = 16
+            sheet.prefersGrabberVisible = true
+        }
+        
+        nav.present(vc, animated: true)
+    }
 }
 extension PostCoordinator: PostCreateVCDelegate {
 }
-
+extension PostCoordinator: PostDetailVCDelegate {
+}
