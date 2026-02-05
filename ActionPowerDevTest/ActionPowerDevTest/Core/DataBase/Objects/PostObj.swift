@@ -31,3 +31,14 @@ class PostObj: Object {
     @Persisted var syncStatus: SyncStatus = .sync
     @Persisted var lastSyncError: String?
 }
+extension PostObj {
+    /// PostObj를 Post 모델로 변환 (PostsVC - TableView에서 사용)
+    func toPost() -> Post {
+        return Post(
+            id: self.serverId ?? -1, // 로컬 전용 게시글은 -1 사용
+            title: self.title,
+            body: self.body,
+            userId: nil
+        )
+    }
+}

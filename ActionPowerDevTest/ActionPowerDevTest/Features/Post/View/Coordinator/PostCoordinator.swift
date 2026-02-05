@@ -53,6 +53,12 @@ extension PostCoordinator: PostsVCDelegate {
     }
 }
 extension PostCoordinator: PostCreateVCDelegate {
+    func didCreatePost() {
+        // PostsVC에 새로고침 요청
+        if let postsVC = nav.viewControllers.first as? PostsVC {
+            postsVC.refreshPosts()
+        }
+    }
 }
 extension PostCoordinator: PostDetailVCDelegate {
 }

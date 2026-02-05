@@ -14,6 +14,8 @@ final class PostVM {
     struct Input {
         /// page: 0부터
         let loadPage: Observable<Int>
+        /// 새로고침 트리거 (게시글 생성/수정/삭제 이후)
+        let refresh: Observable<Void>
     }
 
     struct Output {
@@ -24,6 +26,10 @@ final class PostVM {
     // MARK: - Properties
     private let repo: PostRepoType
     private let disposeBag = DisposeBag()
+    
+    // 현재 API에서 가져온 게시글들
+    private let apiPostsRelay = BehaviorRelay<[Post]>(value: [])
+    
     // MARK: - Initialize
     init(repo: PostRepoType) {
         self.repo = repo
@@ -32,8 +38,9 @@ final class PostVM {
     func transform(input: Input) -> Output {
         let loadingRelay = BehaviorRelay<Bool>(value: false)
         let errorRelay = PublishRelay<String>()
-        let postsRelay = PublishRelay<[Post]>()
+        let postsRelay = BehaviorRelay<[Post]>(value: [])
 
+        // API에서 게시글 로드
         input.loadPage
             .do(onNext: { _ in loadingRelay.accept(true) })
             .flatMapLatest { [weak self] page -> Observable<[Post]> in
@@ -50,16 +57,47 @@ final class PostVM {
             .do(onNext: { _ in loadingRelay.accept(false) },
                 onError: { _ in loadingRelay.accept(false) },
                 onCompleted: { loadingRelay.accept(false) })
-            .bind(to: postsRelay)
+            .subscribe(onNext: { [weak self] apiPosts in
+                guard let self = self else { return }
+                self.apiPostsRelay.accept(apiPosts)
+                
+                // API 게시글 + 로컬 게시글 병합
+                let mergedPosts = self.mergeWithLocalPosts(apiPosts: apiPosts)
+                postsRelay.accept(mergedPosts)
+            })
+            .disposed(by: disposeBag)
+        
+        // 새로고침 시 로컬 DB와 머지한 뒤 갱신
+        input.refresh
+            .subscribe(onNext: { [weak self] _ in
+                guard let self = self else { return }
+                let currentApiPosts = self.apiPostsRelay.value
+                let mergedPosts = self.mergeWithLocalPosts(apiPosts: currentApiPosts)
+                postsRelay.accept(mergedPosts)
+            })
             .disposed(by: disposeBag)
 
         return Output(
-            posts: postsRelay.asDriver(onErrorDriveWith: .empty()),
+            posts: postsRelay.asDriver(),
             isLoading: loadingRelay.asDriver(),
             errorMessage: errorRelay.asSignal()
         )
     }
+    
     func createPost(title: String, body: String, userId: Int = 1) -> Single<Post> {
         return repo.createPost(title: title, body: body, userId: userId)
+    }
+    /// API에서 가져온 게시글과 로컬 DB 게시글을 병합
+    /// 로컬 DB 게시글이 최상단에 위치하도록 정렬
+    func mergeWithLocalPosts(apiPosts: [Post]) -> [Post] {
+        let localPostObjs = repo.getLocalPosts()
+        let localPosts = localPostObjs.map { $0.toPost() }
+        
+        // 로컬 게시글의 serverId Set
+        let localServerIds = Set(localPostObjs.compactMap { $0.serverId })
+        // API 게시글 중 로컬에 없는 것만 필터링
+        let filteredApiPosts = apiPosts.filter { !localServerIds.contains($0.id) }
+        // 로컬 게시글(최신순) + API 게시글
+        return localPosts + filteredApiPosts
     }
 }

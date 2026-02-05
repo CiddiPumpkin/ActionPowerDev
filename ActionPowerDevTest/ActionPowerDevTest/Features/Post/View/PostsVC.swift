@@ -55,6 +55,7 @@ final class PostsVC: UIViewController {
     var vm: PostVM?
     // VM-Input
     private let loadPageRelay = PublishRelay<Int>()
+    private let refreshRelay = PublishRelay<Void>()
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -106,7 +107,10 @@ final class PostsVC: UIViewController {
     }
     private func bindVM() {
         guard let vm = self.vm else { return }
-        let input = PostVM.Input(loadPage: loadPageRelay.asObservable())
+        let input = PostVM.Input(
+            loadPage: loadPageRelay.asObservable(),
+            refresh: refreshRelay.asObservable()
+        )
         let output = vm.transform(input: input)
         
         output.posts
@@ -145,6 +149,10 @@ final class PostsVC: UIViewController {
     }
     // MARK: - Fuctions
     
+    /// 게시글 생성 후 호출되어 리스트를 새로고침
+    func refreshPosts() {
+        refreshRelay.accept(())
+    }
 }
 
 protocol PostsVCDelegate {
