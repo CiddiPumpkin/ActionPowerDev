@@ -67,10 +67,12 @@ class PostDetailVC: UIViewController {
         $0.setTitle("수정", for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
         $0.setTitleColor(.systemBlue, for: .normal)
+        $0.setTitleColor(.systemBlue.withAlphaComponent(0.5), for: .disabled)
         $0.backgroundColor = .systemGray6
         $0.layer.cornerRadius = 10
         $0.layer.borderWidth = 1
         $0.layer.borderColor = UIColor.systemGray4.cgColor
+        $0.isEnabled = false
     }
     let deleteButton = UIButton(type: .system).then {
         $0.setTitle("삭제", for: .normal)
@@ -182,17 +184,44 @@ class PostDetailVC: UIViewController {
     }
     
     private func bindView() {
+        // 현재 입력값 비교하여 수정 버튼 활성화
+        let isContentChanged = Observable.combineLatest(
+            titleTextField.rx.text.orEmpty,
+            contentTextView.rx.text.orEmpty
+        )
+        .map { [weak self] currentTitle, currentBody in
+            guard let self = self else { return false }
+            let titleChanged = currentTitle != self.postTitle
+            let bodyChanged = currentBody != self.postBody
+            let isNotEmpty = !currentTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                            !currentBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            
+            return (titleChanged || bodyChanged) && isNotEmpty
+        }
+        .share(replay: 1)
+        
+        // 수정 버튼 상태 업데이트
+        isContentChanged
+            .subscribe(with: self) { owner, isChanged in
+                owner.editButton.isEnabled = isChanged
+                owner.editButton.backgroundColor = isChanged ? UIColor.systemBlue.withAlphaComponent(0.1) : UIColor.systemGray6
+                owner.editButton.layer.borderColor = isChanged ? UIColor.systemBlue.cgColor : UIColor.systemGray4.cgColor
+            }
+            .disposed(by: disposeBag)
+        
         // placeholder 처리
         contentTextView.rx.text.orEmpty
             .map { !$0.isEmpty }
             .bind(to: placeholderLabel.rx.isHidden)
             .disposed(by: disposeBag)
+        
         // 닫기 버튼 탭
         closeButton.rx.tap
             .subscribe(with: self) { owner, _ in
                 owner.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
+        
         // 수정 버튼 탭
         editButton.rx.tap
             .withLatestFrom(

@@ -132,6 +132,13 @@ final class PostsVC: UIViewController {
                 owner.coordinator?.moveToPostCreate()
             }
             .disposed(by: disposeBag)
+        
+        // 셀 선택 시 상세 화면으로 이동
+        tableView.rx.modelSelected(Post.self)
+            .subscribe(with: self) { owner, post in
+                owner.coordinator?.moveToPostDetail(post: post)
+            }
+            .disposed(by: disposeBag)
     }
     private func bindNav() {
         
