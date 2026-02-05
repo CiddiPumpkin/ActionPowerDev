@@ -10,6 +10,7 @@ import RxSwift
 import RxCocoa
 
 final class PostVM {
+    // MARK: - Input/Output
     struct Input {
         /// page: 0부터
         let loadPage: Observable<Int>
@@ -20,14 +21,14 @@ final class PostVM {
         let isLoading: Driver<Bool>
         let errorMessage: Signal<String>
     }
-    
+    // MARK: - Properties
     private let repo: PostRepoType
     private let disposeBag = DisposeBag()
-
+    // MARK: - Initialize
     init(repo: PostRepoType) {
         self.repo = repo
     }
-
+    // MARK: - Functions
     func transform(input: Input) -> Output {
         let loadingRelay = BehaviorRelay<Bool>(value: false)
         let errorRelay = PublishRelay<String>()
@@ -57,5 +58,8 @@ final class PostVM {
             isLoading: loadingRelay.asDriver(),
             errorMessage: errorRelay.asSignal()
         )
+    }
+    func createPost(title: String, body: String, userId: Int = 1) -> Single<Post> {
+        return repo.createPost(title: title, body: body, userId: userId)
     }
 }
