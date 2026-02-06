@@ -72,3 +72,8 @@ extension PostCoordinator: PostDetailVCDelegate {
         }
     }
 }
+extension PostCoordinator: PostDashBoardVCDelegate {
+    func moveToBack() {
+        
+    }
+}

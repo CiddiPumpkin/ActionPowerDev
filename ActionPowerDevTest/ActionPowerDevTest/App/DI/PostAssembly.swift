@@ -53,6 +53,12 @@ class PostAssembly: Assembly {
             vc.vm = r ~> PostVM.self
             return vc
         }
+        container.register(PostDashBoardVC.self) { r in
+            let vc = PostDashBoardVC()
+            vc.coordinator = r ~> PostCoordinator.self
+            vc.vm = r ~> PostVM.self
+            return vc
+        }
         // MARK: - Navigation
         container.register(UINavigationController.self) { _ in
             self.navController
