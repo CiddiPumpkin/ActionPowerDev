@@ -152,6 +152,9 @@ final class PostsVC: UIViewController {
         loadPageRelay.accept(0)
     }
     private func bindView() {
+        /*
+         FIXME: shared는 당장 테스트를 위한 일시적 구현
+         */
         // 네트워크 상태 모니터링
         NetworkMonitor.shared.isConnected
             .observe(on: MainScheduler.instance)

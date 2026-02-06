@@ -11,6 +11,7 @@ import RxSwift
 import RxRelay
 
 final class NetworkMonitor {
+    static let shared = NetworkMonitor()
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "NetworkMonitor")
     
