@@ -196,7 +196,6 @@ final class PostsVC: UIViewController {
         
     }
     // MARK: - Fuctions
-    
     /// 게시글 생성 후 호출되어 리스트를 새로고침
     func refreshPosts() {
         refreshRelay.accept(())

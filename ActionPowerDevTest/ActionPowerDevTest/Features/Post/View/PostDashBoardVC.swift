@@ -168,21 +168,32 @@ class PostDashBoardVC: UIViewController {
             }
             .disposed(by: disposeBag)
         
+        // 셀 선택 시 상세 화면으로 이동
+        recentTableView.rx.modelSelected(Post.self)
+            .subscribe(with: self) { owner, post in
+                owner.coordinator?.moveToPostDetail(post: post)
+            }
+            .disposed(by: disposeBag)
+
+        
         // 초기 API 로드 실행
         loadPageRelay.accept(0)
     }
     
     // MARK: - Functions
-    
     private func loadStats() {
         guard let vm = vm else { return }
         let stats = vm.getDashboardStats()
         statsRelay.accept(stats)
     }
+    func refreshDashboard() {
+        refreshRelay.accept(())
+    }
 }
 
 protocol PostDashBoardVCDelegate {
     func moveToBack()
+    func moveToPostDetail(post: Post)
 }
 // MARK: - StatCardView
 class StatCardView: UIView {

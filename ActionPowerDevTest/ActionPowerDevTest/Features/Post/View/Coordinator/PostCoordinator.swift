@@ -72,13 +72,18 @@ extension PostCoordinator: PostDetailVCDelegate {
         if let postsVC = nav.viewControllers.first as? PostsVC {
             postsVC.refreshPosts()
         }
+        if let dashboardVC = nav.viewControllers.last as? PostDashBoardVC {
+            dashboardVC.refreshDashboard()
+        }
     }
     
     func didDeletePost() {
         if let postsVC = nav.viewControllers.first as? PostsVC {
             postsVC.refreshPosts()
         }
+        if let dashboardVC = nav.viewControllers.last as? PostDashBoardVC {
+            dashboardVC.refreshDashboard()
+        }
     }
 }
-extension PostCoordinator: PostDashBoardVCDelegate {
-}
+extension PostCoordinator: PostDashBoardVCDelegate { }
