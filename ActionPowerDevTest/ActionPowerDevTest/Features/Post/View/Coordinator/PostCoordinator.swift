@@ -39,6 +39,10 @@ extension PostCoordinator: PostsVCDelegate {
 
         nav.present(vc, animated: true)
     }
+    func moveToDashBoard() {
+        guard let vc = resolver.resolve(PostDashBoardVC.self) else { return }
+        nav.pushViewController(vc, animated: true)
+    }
     func moveToPostDetail(post: Post) {
         guard let vc = resolver.resolve(PostDetailVC.self, argument: post) else { return }
         

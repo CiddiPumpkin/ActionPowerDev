@@ -179,7 +179,12 @@ final class PostsVC: UIViewController {
                 owner.coordinator?.moveToPostCreate()
             }
             .disposed(by: disposeBag)
-        
+        // 대시보드 버튼 탭
+        dashboardButton.rx.tap
+            .subscribe(with: self) { owner, _ in
+                owner.coordinator?.moveToDashBoard()
+            }
+            .disposed(by: disposeBag)
         // 셀 선택 시 상세 화면으로 이동
         tableView.rx.modelSelected(Post.self)
             .subscribe(with: self) { owner, post in
@@ -201,4 +206,5 @@ final class PostsVC: UIViewController {
 protocol PostsVCDelegate {
     func moveToPostCreate()
     func moveToPostDetail(post: Post)
+    func moveToDashBoard()
 }
