@@ -43,9 +43,12 @@ class PostAssembly: Assembly {
         }
         container.register(PostDetailVC.self) { (r, post: Post) in
             let vc = PostDetailVC()
-            vc.postId = post.id
-            vc.postTitle = post.title
-            vc.postBody = post.body
+            let repo = r ~> PostRepoType.self
+            let postWithLocalId = repo.ensurePostInLocal(post)
+            
+            vc.localId = postWithLocalId.localId ?? ""
+            vc.postTitle = postWithLocalId.title
+            vc.postBody = postWithLocalId.body
             vc.coordinator = r ~> PostCoordinator.self
             vc.vm = r ~> PostVM.self
             return vc

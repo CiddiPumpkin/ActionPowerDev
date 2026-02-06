@@ -20,6 +20,15 @@ struct Post: Decodable {
     let title: String
     let body: String
     let userId: Int?
+    let localId: String?  // 로컬 식별자(API 응답엔 없으나 API Post / Local Post 병합 시 사용)
+    
+    init(id: Int, title: String, body: String, userId: Int?, localId: String? = nil) {
+        self.id = id
+        self.title = title
+        self.body = body
+        self.userId = userId
+        self.localId = localId
+    }
 }
 /// DELETE /posts/{id}
 struct PostDeleteResponse: Decodable {

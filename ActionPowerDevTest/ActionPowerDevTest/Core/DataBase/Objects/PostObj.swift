@@ -15,9 +15,10 @@ enum PendingStatus: String, PersistableEnum {
     case delete
 }
 enum SyncStatus: String, PersistableEnum {
-    case sync
-    case needSync
-    case fail
+    case sync          // 서버와 동기화됨
+    case localOnly     // 로컬에서만 존재(서버 ID 무효)
+    case needSync      // 동기화 대기 중
+    case fail          // 동기화 실패
 }
 class PostObj: Object {
     @Persisted(primaryKey: true) var localId: String = UUID().uuidString
@@ -38,7 +39,8 @@ extension PostObj {
             id: self.serverId ?? -1, // 로컬 전용 게시글은 -1 사용
             title: self.title,
             body: self.body,
-            userId: nil
+            userId: nil,
+            localId: self.localId
         )
     }
 }

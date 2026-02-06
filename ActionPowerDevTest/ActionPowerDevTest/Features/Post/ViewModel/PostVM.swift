@@ -88,12 +88,12 @@ final class PostVM {
         return repo.createPost(title: title, body: body, userId: userId)
     }
     
-    func updatePost(id: Int, title: String?, body: String?) -> Single<Post> {
-        return repo.updatePost(id: id, title: title, body: body)
+    func updatePost(localId: String, title: String?, body: String?) -> Single<Post> {
+        return repo.updatePost(localId: localId, title: title, body: body)
     }
     
-    func deletePost(id: Int) -> Single<PostDeleteResponse> {
-        return repo.deletePost(id: id)
+    func deletePost(localId: String) -> Single<PostDeleteResponse> {
+        return repo.deletePost(localId: localId)
     }
     /// API에서 가져온 게시글과 로컬 DB 게시글을 병합
     /// 로컬 DB 게시글이 최상단에 위치하도록 정렬

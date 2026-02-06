@@ -88,7 +88,7 @@ class PostDetailVC: UIViewController {
     var vm: PostVM?
     
     // 전달받을 데이터
-    var postId: Int = 0
+    var localId: String = ""
     var postTitle: String = ""
     var postBody: String = ""
     
@@ -239,7 +239,7 @@ class PostDetailVC: UIViewController {
                 // 로딩 표시
                 self.editButton.isEnabled = false
                 
-                return vm.updatePost(id: self.postId, title: title, body: body)
+                return vm.updatePost(localId: self.localId, title: title, body: body)
                     .asObservable()
                     .catch { error in
                         // 에러 처리
@@ -273,7 +273,7 @@ class PostDetailVC: UIViewController {
                     // 로딩 표시
                     owner.deleteButton.isEnabled = false
                     
-                    vm.deletePost(id: owner.postId)
+                    vm.deletePost(localId: owner.localId)
                         .asObservable()
                         .catch { error in
                             // 에러 처리
