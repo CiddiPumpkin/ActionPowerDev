@@ -24,6 +24,10 @@ class PostCoordinator {
             nav.setViewControllers([vc], animated: animated)
         }
     }
+    func moveToBack() {
+        nav.popViewController(animated: true)
+    }
+        
 }
 extension PostCoordinator: PostsVCDelegate {
     func moveToPostCreate() {
@@ -77,7 +81,4 @@ extension PostCoordinator: PostDetailVCDelegate {
     }
 }
 extension PostCoordinator: PostDashBoardVCDelegate {
-    func moveToBack() {
-        
-    }
 }
