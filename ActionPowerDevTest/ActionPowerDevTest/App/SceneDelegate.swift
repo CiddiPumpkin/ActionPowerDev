@@ -28,10 +28,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         window.makeKeyAndVisible()
 
-        // 디버깅: 화면 크기 출력
-        print("🔍 Screen size: \(UIScreen.main.bounds.size)")
-        print("🔍 Window size: \(window.frame.size)")
-
         assembler = Assembler([
             // DB
             DataBaseAssembly(),
