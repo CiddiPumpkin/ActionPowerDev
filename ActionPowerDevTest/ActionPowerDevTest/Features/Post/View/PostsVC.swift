@@ -150,16 +150,9 @@ final class PostsVC: UIViewController {
             }
             .disposed(by: disposeBag)
         
-        loadPageRelay.accept(0)
-    }
-    private func bindView() {
-        /*
-         FIXME: shared는 당장 테스트를 위한 일시적 구현
-         */
-        // 네트워크 상태 모니터링
-        NetworkMonitor.shared.isConnected
-            .observe(on: MainScheduler.instance)
-            .subscribe(with: self) { owner, isConnected in
+        // 네트워크 연결 상태 모니터링
+        output.isConnected
+            .drive(with: self) { owner, isConnected in
                 UIView.animate(withDuration: 0.3) {
                     if isConnected {
                         owner.offlineBanner.isHidden = true
@@ -177,6 +170,9 @@ final class PostsVC: UIViewController {
             }
             .disposed(by: disposeBag)
         
+        loadPageRelay.accept(0)
+    }
+    private func bindView() {
         // 글쓰기 버튼 탭
         createButton.rx.tap
             .subscribe(with: self) { owner, _ in

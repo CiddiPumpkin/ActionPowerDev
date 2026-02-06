@@ -26,7 +26,7 @@ class PostAssembly: Assembly {
         }
         // MARK: - VM
         container.register(PostVM.self) { r in
-            PostVM(repo: r ~> PostRepoType.self)
+            PostVM(repo: r ~> PostRepoType.self, networkMonitor: r ~> NetworkMonitor.self)
         }
         // MARK: - VC
         container.register(PostsVC.self) { r in

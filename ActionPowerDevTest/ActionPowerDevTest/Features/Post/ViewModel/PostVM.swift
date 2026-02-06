@@ -17,22 +17,24 @@ final class PostVM {
         /// 새로고침 트리거 (게시글 생성/수정/삭제 이후)
         let refresh: Observable<Void>
     }
-
     struct Output {
         let posts: Driver<[Post]>
         let isLoading: Driver<Bool>
         let errorMessage: Signal<String>
+        let isConnected: Driver<Bool>
     }
     // MARK: - Properties
     private let repo: PostRepoType
+    private let networkMonitor: NetworkMonitor
     private let disposeBag = DisposeBag()
     
     // 현재 API에서 가져온 게시글들
     private let apiPostsRelay = BehaviorRelay<[Post]>(value: [])
     
     // MARK: - Initialize
-    init(repo: PostRepoType) {
+    init(repo: PostRepoType, networkMonitor: NetworkMonitor) {
         self.repo = repo
+        self.networkMonitor = networkMonitor
     }
     // MARK: - Functions
     func transform(input: Input) -> Output {
@@ -80,7 +82,8 @@ final class PostVM {
         return Output(
             posts: postsRelay.asDriver(),
             isLoading: loadingRelay.asDriver(),
-            errorMessage: errorRelay.asSignal()
+            errorMessage: errorRelay.asSignal(),
+            isConnected: networkMonitor.isConnected.asDriver(onErrorJustReturn: true)
         )
     }
     
