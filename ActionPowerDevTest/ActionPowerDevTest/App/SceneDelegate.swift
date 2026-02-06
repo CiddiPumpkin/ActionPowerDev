@@ -23,9 +23,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         window.backgroundColor = .white
+        window.frame = windowScene.coordinateSpace.bounds
         window.rootViewController = navController
         self.window = window
         window.makeKeyAndVisible()
+
+        // 디버깅: 화면 크기 출력
+        print("🔍 Screen size: \(UIScreen.main.bounds.size)")
+        print("🔍 Window size: \(window.frame.size)")
 
         assembler = Assembler([
             // DB
