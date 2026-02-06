@@ -151,16 +151,19 @@ final class PostVM {
         // 동기화 필요 게시글
         let needSyncPosts = localPosts.filter { $0.syncStatus == .needSync || $0.pendingStatus != .none }
         
-        // 최근 5개 게시글
-        let recentPosts = Array(mergedPosts.prefix(5))
+        // 최근 수정/추가된 게시글 (로컬에서 생성/수정한 것만 최신 5개)
+        // API에서 가져온 것(serverId만 있고 로컬 수정 없음)은 제외
+        let recentPosts = localPosts
+            .map { $0.toPost() }
+            .prefix(5)
         
-        print("통계 - 전체: \(mergedPosts.count), 로컬전용: \(localOnlyPosts.count), 동기화필요: \(needSyncPosts.count)")
+        print("통계 - 전체: \(mergedPosts.count), 로컬전용: \(localOnlyPosts.count), 동기화필요: \(needSyncPosts.count), 최근: \(recentPosts.count)")
         
         return DashboardStats(
             totalCount: mergedPosts.count,
             localOnlyCount: localOnlyPosts.count,
             needSyncCount: needSyncPosts.count,
-            recentPosts: recentPosts
+            recentPosts: Array(recentPosts)
         )
     }
     
