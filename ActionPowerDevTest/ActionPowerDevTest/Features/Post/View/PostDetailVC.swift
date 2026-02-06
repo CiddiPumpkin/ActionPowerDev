@@ -162,7 +162,7 @@ class PostDetailVC: UIViewController {
             $0.top.equalTo(contentTextView.snp.bottom).offset(20)
             $0.left.right.equalToSuperview().inset(16)
             $0.height.equalTo(30)
-            $0.bottom.equalToSuperview().inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(20)
         }
     }
     

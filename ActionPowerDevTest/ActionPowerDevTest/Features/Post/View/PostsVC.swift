@@ -79,7 +79,8 @@ final class PostsVC: UIViewController {
         // titleLabel
         view.addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
-            $0.left.top.equalToSuperview().inset(12)
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(12)
+            $0.left.equalToSuperview().inset(12)
             $0.right.equalToSuperview()
         }
         // separatorView
