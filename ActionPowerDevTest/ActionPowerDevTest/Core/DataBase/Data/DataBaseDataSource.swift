@@ -22,7 +22,7 @@ protocol DataBaseDataSourceType {
         updatedDate: Date
     )
     func fetch(localId: String) -> PostObj?
-    func fetchVisibleSortedByUpdatedDesc() -> [PostObj]
+    func fetchVisibleSortedByCreatedDesc() -> [PostObj]
     func fetchPendingPosts() -> [PostObj]
     func fetchRecentTop5() -> [PostObj]
     func delete(localId: String)
@@ -108,15 +108,15 @@ final class DataBaseDataSource: DataBaseDataSourceType {
         }
     }
 
-    func fetchVisibleSortedByUpdatedDesc() -> [PostObj] {
+    func fetchVisibleSortedByCreatedDesc() -> [PostObj] {
         do {
             let realm = try realm()
             let results = realm.objects(PostObj.self)
                 .filter("isDeleted == false")
-                .sorted(byKeyPath: "updatedDate", ascending: false)
+                .sorted(byKeyPath: "createdDate", ascending: false)
             return Array(results)
         } catch {
-            print("Realm Post fetchVisibleSortedByUpdatedDesc Error:", error)
+            print("Realm Post fetchVisibleSortedByCreatedDesc Error:", error)
             return []
         }
     }

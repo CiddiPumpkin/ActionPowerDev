@@ -55,7 +55,7 @@ final class PostRepo: PostRepoType {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
         
-        // serverId가 유효하고 syncStatus가 .sync인 경우 → 서버 API 호출
+        // serverId가 유효하고 syncStatus가 .sync인 경우 서버 API 호출
         if let serverId = postObj.serverId, serverId > 0, postObj.syncStatus == .sync {
             let request = PostUpdateRequest(title: title, body: body)
             return postAPI.updatePost(id: serverId, req: request)
@@ -94,7 +94,7 @@ final class PostRepo: PostRepoType {
                     return .error(error)
                 }
         } else {
-            // 로컬 전용 게시글 또는 needSync 상태 -> 로컬만 업데이트
+            // 로컬 전용 게시글 또는 needSync 상태이면 로컬만 업데이트
             db.update(
                 localId: localId,
                 title: title,
@@ -121,7 +121,7 @@ final class PostRepo: PostRepoType {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
         
-        // serverId가 유효하고 syncStatus가 .sync인 경우 -> 서버 API 호출
+        // serverId가 유효하고 syncStatus가 .sync인 경우 서버 API 호출
         if let serverId = postObj.serverId, serverId > 0, postObj.syncStatus == .sync {
             return postAPI.deletePost(id: serverId)
                 .do(onSuccess: { [weak self] response in
@@ -147,7 +147,7 @@ final class PostRepo: PostRepoType {
                     return .just(response)
                 }
         } else {
-            // 로컬 전용 게시글 -> 로컬에서만 삭제
+            // 로컬 전용 게시글인 경우 로컬에서만 삭제
             db.delete(localId: localId)
             
             // 삭제 응답 반환 (serverId가 없으면 -1)
@@ -158,9 +158,9 @@ final class PostRepo: PostRepoType {
     
     // MARK: - Local DB
     
-    /// 로컬 DB에서 게시글 목록 가져오기 (삭제되지 않은 것만, 최신순)
+    /// 로컬 DB에서 게시글 목록 가져오기 (삭제되지 않은 것만, 생성일 기준 최신순)
     func getLocalPosts() -> [PostObj] {
-        return db.fetchVisibleSortedByUpdatedDesc()
+        return db.fetchVisibleSortedByCreatedDesc()
     }
     
     /// API로 생성된 게시글을 로컬 DB에 저장
@@ -204,16 +204,16 @@ final class PostRepo: PostRepoType {
         }
         
         // serverId로 로컬 DB에서 찾기
-        if let existingPost = db.fetchVisibleSortedByUpdatedDesc().first(where: { $0.serverId == post.id }) {
-            // 이미 로컬에 있음 → localId 포함한 Post 반환
+        if let existingPost = db.fetchVisibleSortedByCreatedDesc().first(where: { $0.serverId == post.id }) {
+            // 이미 로컬에 있으면 localId 포함한 Post 반환
             return existingPost.toPost()
         }
         
-        // 로컬에 없음 → 새로 저장
+        // 로컬에 없으면 새로 저장
         savePostToLocal(post)
         
         // 저장 후 다시 찾아서 반환 (localId 포함)
-        if let savedPost = db.fetchVisibleSortedByUpdatedDesc().first(where: { $0.serverId == post.id }) {
+        if let savedPost = db.fetchVisibleSortedByCreatedDesc().first(where: { $0.serverId == post.id }) {
             return savedPost.toPost()
         }
         
