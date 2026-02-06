@@ -154,9 +154,29 @@ class PostCreateVC: UIViewController {
         buttonStackView.snp.makeConstraints {
             $0.top.equalTo(contentTextView.snp.bottom).offset(20)
             $0.left.right.equalToSuperview().inset(16)
-            $0.height.equalTo(30)
+            $0.height.equalTo(44)
             $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(20)
         }
+        
+        // 키보드 높이만큼 bottom 조정
+        NotificationCenter.default.rx.notification(UIResponder.keyboardWillShowNotification)
+            .compactMap { $0.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect }
+            .subscribe(onNext: { [weak self] keyboardFrame in
+                self?.buttonStackView.snp.updateConstraints {
+                    $0.bottom.equalTo(self!.view.safeAreaLayoutGuide.snp.bottom).inset(keyboardFrame.height + 20)
+                }
+                UIView.animate(withDuration: 0.3) { self?.view.layoutIfNeeded() }
+            })
+            .disposed(by: disposeBag)
+        
+        NotificationCenter.default.rx.notification(UIResponder.keyboardWillHideNotification)
+            .subscribe(onNext: { [weak self] _ in
+                self?.buttonStackView.snp.updateConstraints {
+                    $0.bottom.equalTo(self!.view.safeAreaLayoutGuide.snp.bottom).inset(20)
+                }
+                UIView.animate(withDuration: 0.3) { self?.view.layoutIfNeeded() }
+            })
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Bind
