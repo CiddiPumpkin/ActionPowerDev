@@ -16,6 +16,8 @@ protocol PostRepoType {
     func getLocalPosts() -> [PostObj]
     func savePostToLocal(_ post: Post)
     func ensurePostInLocal(_ post: Post) -> Post  // API 게시글을 로컬 DB에 저장하고 localId 포함한 Post 반환
+    func syncPendingPosts() -> Single<SyncResult>  // 대기 중인 게시글 동기화
+    func getDashboardStats() -> DashboardStats  // 대시보드 통계 정보
 }
 
 final class PostRepo: PostRepoType {
@@ -26,7 +28,7 @@ final class PostRepo: PostRepoType {
         self.postAPI = postAPI
         self.db = db
     }
-    
+    // MARK: - Post
     func getPosts(page: Int, size: Int = 10) -> Single<PostsResponse> {
         let page = max(0, page)
         let skip = page * size
@@ -220,4 +222,169 @@ final class PostRepo: PostRepoType {
         // 실패 시 원본 반환 (fallback)
         return post
     }
+    
+    // MARK: - Sync
+    
+    /// 대기 중인 게시글들을 서버와 동기화
+    func syncPendingPosts() -> Single<SyncResult> {
+        // ⚠️ Realm 객체를 다른 스레드에서 사용하지 않도록 필요한 데이터만 추출
+        let pendingPosts = db.fetchPendingPosts()
+        
+        guard !pendingPosts.isEmpty else {
+            return .just(SyncResult(success: 0, failed: 0, errors: []))
+        }
+        
+        // Realm 객체에서 필요한 데이터만 추출하여 구조체로 변환
+        let pendingPostsData = pendingPosts.map { postObj in
+            PendingPostData(
+                localId: postObj.localId,
+                serverId: postObj.serverId,
+                title: postObj.title,
+                body: postObj.body,
+                pendingStatus: postObj.pendingStatus
+            )
+        }
+        
+        var syncObservables: [Single<SyncItemResult>] = []
+        
+        for postData in pendingPostsData {
+            let syncItem: Single<SyncItemResult>
+            
+            switch postData.pendingStatus {
+            case .create:
+                // 생성 대기 중인 게시글
+                syncItem = syncCreatePost(postData)
+                
+            case .update:
+                // 수정 대기 중인 게시글
+                syncItem = syncUpdatePost(postData)
+                
+            case .delete:
+                // 삭제 대기 중인 게시글
+                syncItem = syncDeletePost(postData)
+                
+            case .none:
+                syncItem = .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
+            }
+            
+            syncObservables.append(syncItem)
+        }
+        
+        // 모든 동기화 작업을 병렬로 실행
+        return Single.zip(syncObservables)
+            .map { results in
+                let successCount = results.filter { $0.success }.count
+                let failedCount = results.filter { !$0.success }.count
+                let errors = results.compactMap { $0.error }
+                
+                return SyncResult(success: successCount, failed: failedCount, errors: errors)
+            }
+    }
+    
+    private func syncCreatePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
+        let request = PostCreateRequest(title: postData.title, body: postData.body, userId: 1)
+        
+        return postAPI.createPost(req: request)
+            .do(onSuccess: { [weak self] post in
+                print("생성 동기화 성공 - localId: \(postData.localId)")
+                self?.db.update(localId: postData.localId, title: nil, body: nil, serverId: post.id, 
+                               isDeleted: nil, pendingStatus: .none, syncStatus: .sync, 
+                               lastSyncError: nil, updatedDate: Date())
+            })
+            .map { _ in SyncItemResult(localId: postData.localId, success: true, error: nil) }
+            .catch { error in
+                print("생성 동기화 실패 - localId: \(postData.localId)")
+                self.db.update(localId: postData.localId, title: nil, body: nil, serverId: nil,
+                              isDeleted: nil, pendingStatus: .create, syncStatus: .fail,
+                              lastSyncError: error.localizedDescription, updatedDate: Date())
+                return .just(SyncItemResult(localId: postData.localId, success: false, error: error.localizedDescription))
+            }
+    }
+    
+    private func syncUpdatePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
+        guard let serverId = postData.serverId else {
+            return .just(SyncItemResult(localId: postData.localId, success: false, error: "No serverId"))
+        }
+        
+        return postAPI.updatePost(id: serverId, req: PostUpdateRequest(title: postData.title, body: postData.body))
+            .do(onSuccess: { [weak self] _ in
+                print("수정 동기화 성공 - localId: \(postData.localId)")
+                self?.db.update(localId: postData.localId, title: nil, body: nil, serverId: nil,
+                               isDeleted: nil, pendingStatus: .none, syncStatus: .sync,
+                               lastSyncError: nil, updatedDate: Date())
+            })
+            .map { _ in SyncItemResult(localId: postData.localId, success: true, error: nil) }
+            .catch { error in
+                print("수정 동기화 실패 - localId: \(postData.localId)")
+                self.db.update(localId: postData.localId, title: nil, body: nil, serverId: nil,
+                              isDeleted: nil, pendingStatus: .update, syncStatus: .fail,
+                              lastSyncError: error.localizedDescription, updatedDate: Date())
+                return .just(SyncItemResult(localId: postData.localId, success: false, error: error.localizedDescription))
+            }
+    }
+    
+    private func syncDeletePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
+        guard let serverId = postData.serverId else {
+            print("삭제 동기화 - localId: \(postData.localId) (로컬만)")
+            self.db.delete(localId: postData.localId)
+            return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
+        }
+        
+        return postAPI.deletePost(id: serverId)
+            .do(onSuccess: { [weak self] _ in
+                print("삭제 동기화 성공 - localId: \(postData.localId)")
+                self?.db.delete(localId: postData.localId)
+            })
+            .map { _ in SyncItemResult(localId: postData.localId, success: true, error: nil) }
+            .catch { error in
+                print("삭제 동기화 실패 - localId: \(postData.localId)")
+                self.db.update(localId: postData.localId, title: nil, body: nil, serverId: nil,
+                              isDeleted: nil, pendingStatus: .delete, syncStatus: .fail,
+                              lastSyncError: error.localizedDescription, updatedDate: Date())
+                return .just(SyncItemResult(localId: postData.localId, success: false, error: error.localizedDescription))
+            }
+    }
+    
+    // MARK: - Dashboard
+    /// 대시보드 통계 정보 조회
+    func getDashboardStats() -> DashboardStats {
+        let allPosts = db.fetchVisibleSortedByCreatedDesc()
+        let localOnlyPosts = allPosts.filter { $0.syncStatus == .localOnly }
+        let needSyncPosts = allPosts.filter { $0.syncStatus == .needSync || $0.pendingStatus != .none }
+        let recentPosts = db.fetchRecentTop5().map { $0.toPost() }
+        
+        return DashboardStats(
+            totalCount: allPosts.count,
+            localOnlyCount: localOnlyPosts.count,
+            needSyncCount: needSyncPosts.count,
+            recentPosts: recentPosts
+        )
+    }
 }
+// MARK: - Sync Models
+/// 대기 중인 게시글 데이터 (Realm 스레드 안전성을 위한 구조체)
+private struct PendingPostData {
+    let localId: String
+    let serverId: Int?
+    let title: String
+    let body: String
+    let pendingStatus: PendingStatus
+}
+struct SyncResult {
+    let success: Int
+    let failed: Int
+    let errors: [String]
+}
+struct SyncItemResult {
+    let localId: String
+    let success: Bool
+    let error: String?
+}
+// MARK: - Dashboard Models
+struct DashboardStats {
+    let totalCount: Int
+    let localOnlyCount: Int
+    let needSyncCount: Int
+    let recentPosts: [Post]
+}
+
