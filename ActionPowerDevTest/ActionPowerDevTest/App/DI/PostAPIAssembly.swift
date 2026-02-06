@@ -15,10 +15,13 @@ class PostAPIAssembly: Assembly {
         container.register(MoyaProvider<PostAPIController>.self) { _ in
             MoyaProvider<PostAPIController>()
         }.inObjectScope(.container)
-        
         // MARK: - DataSource
         container.register(PostAPIDataSourceType.self) { r in
             PostAPIDataSource(provider: r.resolve(MoyaProvider<PostAPIController>.self)!)
+        }.inObjectScope(.container)
+        // MARK: - Monitoring
+        container.register(NetworkMonitor.self) { r in
+            NetworkMonitor()
         }.inObjectScope(.container)
     }
 }

@@ -40,7 +40,8 @@ extension PostObj {
             title: self.title,
             body: self.body,
             userId: nil,
-            localId: self.localId
+            localId: self.localId,
+            syncStatus: self.syncStatus
         )
     }
 }

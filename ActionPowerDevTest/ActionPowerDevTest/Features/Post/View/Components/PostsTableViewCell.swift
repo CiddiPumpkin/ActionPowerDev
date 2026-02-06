@@ -29,6 +29,16 @@ class PostsTableViewCell: UITableViewCell {
         $0.textColor = .black
         $0.numberOfLines = 0
     }
+    let syncStatusLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 9, weight: .medium)
+        $0.textColor = .white
+        $0.backgroundColor = .systemOrange
+        $0.textAlignment = .center
+        $0.layer.cornerRadius = 8
+        $0.layer.masksToBounds = true
+        $0.text = "연동 필요"
+        $0.isHidden = true
+    }
     // MARK: - Properties
     var cellDisposeBag = DisposeBag()
     // MARK: - Initialize
@@ -57,11 +67,20 @@ class PostsTableViewCell: UITableViewCell {
             $0.left.top.right.equalToSuperview()
             $0.bottom.equalToSuperview().inset(8)
         }
+        // syncStatusLabel
+        containerView.addSubview(syncStatusLabel)
+        syncStatusLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(8)
+            $0.right.equalToSuperview().inset(8)
+            $0.height.equalTo(20)
+            $0.width.equalTo(60)
+        }
         // titleLabel
         containerView.addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
             $0.top.equalToSuperview().inset(8)
-            $0.left.right.equalToSuperview().inset(12)
+            $0.left.equalToSuperview().inset(12)
+            $0.right.equalTo(syncStatusLabel.snp.left).offset(-8)
         }
         // bodyLabel
         containerView.addSubview(bodyLabel)
@@ -75,5 +94,26 @@ class PostsTableViewCell: UITableViewCell {
     func configre(_ post: Post) {
         titleLabel.text = post.title
         bodyLabel.text = post.body
+        
+        if let syncStatus = post.syncStatus {
+            switch syncStatus {
+            case .needSync:
+                syncStatusLabel.isHidden = false
+                syncStatusLabel.backgroundColor = .systemOrange
+                syncStatusLabel.text = "연동 필요"
+            case .localOnly:
+                syncStatusLabel.isHidden = false
+                syncStatusLabel.backgroundColor = .systemGray
+                syncStatusLabel.text = "로컬 전용"
+            case .fail:
+                syncStatusLabel.isHidden = false
+                syncStatusLabel.backgroundColor = .systemRed
+                syncStatusLabel.text = "동기화 실패"
+            case .sync:
+                syncStatusLabel.isHidden = true
+            }
+        } else {
+            syncStatusLabel.isHidden = true
+        }
     }
 }

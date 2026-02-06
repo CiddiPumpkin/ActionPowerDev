@@ -21,6 +21,16 @@ final class PostsVC: UIViewController {
     let separatorView = UIView().then {
         $0.backgroundColor = .lightGray
     }
+    let offlineBanner = UIView().then {
+        $0.backgroundColor = .systemOrange
+        $0.isHidden = true
+    }
+    let offlineLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 11, weight: .medium)
+        $0.textColor = .white
+        $0.text = "🚫 오프라인"
+        $0.textAlignment = .center
+    }
     let tableView = UITableView().then {
         $0.register(PostsTableViewCell.self, forCellReuseIdentifier: "cell")
         $0.estimatedRowHeight = 40
@@ -79,6 +89,18 @@ final class PostsVC: UIViewController {
             $0.left.right.equalToSuperview()
             $0.height.equalTo(1)
         }
+        // offlineBanner
+        view.addSubview(offlineBanner)
+        offlineBanner.snp.makeConstraints {
+            $0.top.equalTo(separatorView.snp.bottom)
+            $0.left.right.equalToSuperview()
+            $0.height.equalTo(0)
+        }
+        // offlineLabel
+        offlineBanner.addSubview(offlineLabel)
+        offlineLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
         // dashBoardButton
         view.addSubview(dashboardButton)
         dashboardButton.snp.makeConstraints {
@@ -94,7 +116,7 @@ final class PostsVC: UIViewController {
         // tableView
         view.addSubview(tableView)
         tableView.snp.makeConstraints {
-            $0.top.equalTo(separatorView.snp.bottom).offset(4)
+            $0.top.equalTo(offlineBanner.snp.bottom).offset(4)
             $0.left.right.equalToSuperview().inset(12)
             $0.bottom.equalToSuperview()
         }
@@ -130,6 +152,27 @@ final class PostsVC: UIViewController {
         loadPageRelay.accept(0)
     }
     private func bindView() {
+        // 네트워크 상태 모니터링
+        NetworkMonitor.shared.isConnected
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self) { owner, isConnected in
+                UIView.animate(withDuration: 0.3) {
+                    if isConnected {
+                        owner.offlineBanner.isHidden = true
+                        owner.offlineBanner.snp.updateConstraints {
+                            $0.height.equalTo(0)
+                        }
+                    } else {
+                        owner.offlineBanner.isHidden = false
+                        owner.offlineBanner.snp.updateConstraints {
+                            $0.height.equalTo(30)
+                        }
+                    }
+                    owner.view.layoutIfNeeded()
+                }
+            }
+            .disposed(by: disposeBag)
+        
         // 글쓰기 버튼 탭
         createButton.rx.tap
             .subscribe(with: self) { owner, _ in
