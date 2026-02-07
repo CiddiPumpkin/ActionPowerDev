@@ -27,6 +27,16 @@ class PostDashBoardVC: UIViewController {
     let separatorView = UIView().then {
         $0.backgroundColor = .lightGray
     }
+    let offlineBanner = UIView().then {
+        $0.backgroundColor = .systemOrange
+        $0.isHidden = true
+    }
+    let offlineLabel = UILabel().then {
+        $0.font = .systemFont(ofSize: 11, weight: .medium)
+        $0.textColor = .white
+        $0.text = "🚫 오프라인"
+        $0.textAlignment = .center
+    }
     let statsStackView = UIStackView().then {
         $0.axis = .vertical
         $0.spacing = 12
@@ -93,13 +103,25 @@ class PostDashBoardVC: UIViewController {
             $0.left.right.equalToSuperview()
             $0.height.equalTo(1)
         }
+        // offlineBanner
+        view.addSubview(offlineBanner)
+        offlineBanner.snp.makeConstraints {
+            $0.top.equalTo(separatorView.snp.bottom)
+            $0.left.right.equalToSuperview()
+            $0.height.equalTo(0)
+        }
+        // offlineLabel
+        offlineBanner.addSubview(offlineLabel)
+        offlineLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
         // statsStackView
         statsStackView.addArrangedSubview(totalCountCard)
         statsStackView.addArrangedSubview(localOnlyCard)
         statsStackView.addArrangedSubview(needSyncCard)
         view.addSubview(statsStackView)
         statsStackView.snp.makeConstraints {
-            $0.top.equalTo(separatorView.snp.bottom).offset(12)
+            $0.top.equalTo(offlineBanner.snp.bottom).offset(12)
             $0.left.right.equalToSuperview().inset(16)
         }
         totalCountCard.snp.makeConstraints {
@@ -157,6 +179,26 @@ class PostDashBoardVC: UIViewController {
                 self?.loadStats()
                 self?.refreshRelay.accept(())
             })
+            .disposed(by: disposeBag)
+        
+        // 네트워크 연결 상태 모니터링
+        output.isConnected
+            .drive(with: self) { owner, isConnected in
+                UIView.animate(withDuration: 0.3) {
+                    if isConnected {
+                        owner.offlineBanner.isHidden = true
+                        owner.offlineBanner.snp.updateConstraints {
+                            $0.height.equalTo(0)
+                        }
+                    } else {
+                        owner.offlineBanner.isHidden = false
+                        owner.offlineBanner.snp.updateConstraints {
+                            $0.height.equalTo(30)
+                        }
+                    }
+                    owner.view.layoutIfNeeded()
+                }
+            }
             .disposed(by: disposeBag)
         
         // 통계 데이터 바인딩

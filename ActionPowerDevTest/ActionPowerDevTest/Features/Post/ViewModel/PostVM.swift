@@ -149,7 +149,7 @@ final class PostVM {
         let localOnlyPosts = localPosts.filter { $0.syncStatus == .localOnly }
         
         // 동기화 필요 게시글
-        let needSyncPosts = localPosts.filter { $0.syncStatus == .needSync || $0.pendingStatus != .none }
+        let needSyncPosts = localPosts.filter { $0.syncStatus == .needSync }
         
         // 최근 수정/추가된 게시글 (로컬에서 생성/수정한 것만 최신 5개)
         // API에서 가져온 것(serverId만 있고 로컬 수정 없음)은 제외
