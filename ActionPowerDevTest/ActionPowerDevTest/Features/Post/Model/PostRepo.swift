@@ -43,7 +43,7 @@ final class PostRepo: PostRepoType {
                 self?.savePostToLocal(post)
             })
             .catch { [weak self] error in
-                // API 실패 시 로컬 전용으로 생성
+                // API 실패 시 오프라인 생성으로 생성
                 guard let self = self else { return .error(error) }
                 
                 let localPost = self.createLocalOnlyPost(title: title, body: body, userId: userId)
@@ -96,7 +96,7 @@ final class PostRepo: PostRepoType {
                     return .error(error)
                 }
         } else {
-            // 로컬 전용 게시글 또는 needSync 상태이면 로컬만 업데이트
+            // 오프라인 생성 게시글 또는 needSync 상태이면 로컬만 업데이트
             db.update(
                 localId: localId,
                 title: title,
@@ -149,7 +149,7 @@ final class PostRepo: PostRepoType {
                     return .just(response)
                 }
         } else {
-            // 로컬 전용 게시글인 경우 로컬에서만 삭제
+            // 오프라인 생성 게시글인 경우 로컬에서만 삭제
             db.delete(localId: localId)
             
             // 삭제 응답 반환 (serverId가 없으면 -1)
@@ -180,7 +180,7 @@ final class PostRepo: PostRepoType {
         db.create(postObj)
     }
     
-    /// 오프라인 또는 API 실패 시 로컬 전용 게시글 생성
+    /// 오프라인 또는 API 실패 시 오프라인 생성 게시글 생성
     private func createLocalOnlyPost(title: String, body: String, userId: Int) -> Post {
         let postObj = PostObj()
         postObj.serverId = nil  // 서버 ID 없음
@@ -190,7 +190,7 @@ final class PostRepo: PostRepoType {
         postObj.updatedDate = Date()
         postObj.isDeleted = false
         postObj.pendingStatus = .create  // 생성 대기 상태
-        postObj.syncStatus = .localOnly  // 로컬 전용
+        postObj.syncStatus = .localOnly  // 오프라인 생성
         
         db.create(postObj)
         

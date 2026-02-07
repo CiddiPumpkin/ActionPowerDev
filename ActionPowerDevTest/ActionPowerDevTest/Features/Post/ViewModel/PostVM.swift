@@ -145,7 +145,7 @@ final class PostVM {
         // 전체 게시글 = 로컬 + API (중복 제거)
         let mergedPosts = mergeWithLocalPosts(apiPosts: apiPosts)
         
-        // 로컬 전용 게시글 (오프라인 생성)
+        // 오프라인 생성 게시글 (오프라인 생성)
         let localOnlyPosts = localPosts.filter { $0.syncStatus == .localOnly }
         
         // 동기화 필요 게시글

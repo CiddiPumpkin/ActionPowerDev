@@ -104,7 +104,7 @@ class PostsTableViewCell: UITableViewCell {
             case .localOnly:
                 syncStatusLabel.isHidden = false
                 syncStatusLabel.backgroundColor = .systemGray
-                syncStatusLabel.text = "로컬 전용"
+                syncStatusLabel.text = "오프라인 생성"
             case .fail:
                 syncStatusLabel.isHidden = false
                 syncStatusLabel.backgroundColor = .systemRed
