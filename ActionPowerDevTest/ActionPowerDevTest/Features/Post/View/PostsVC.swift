@@ -170,6 +170,14 @@ final class PostsVC: UIViewController {
             }
             .disposed(by: disposeBag)
         
+        // 동기화 완료 시 테이블뷰 자동 새로고침
+        output.syncCompleted
+            .emit(onNext: { [weak self] result in
+                print("동기화 완료 - 게시글 목록 새로고침")
+                self?.refreshRelay.accept(())
+            })
+            .disposed(by: disposeBag)
+        
         loadPageRelay.accept(0)
     }
     private func bindView() {

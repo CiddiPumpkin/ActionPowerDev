@@ -124,8 +124,12 @@ final class DataBaseDataSource: DataBaseDataSourceType {
     func fetchPendingPosts() -> [PostObj] {
         do {
             let realm = try realm()
+            // pendingStatus가 none이 아니거나, syncStatus가 localOnly/needSync인 것들
             let results = realm.objects(PostObj.self)
-                .filter("pendingStatus != %@", PendingStatus.none.rawValue)
+                .filter("isDeleted == false AND ((pendingStatus != %@) OR (syncStatus == %@) OR (syncStatus == %@))",
+                       PendingStatus.none.rawValue,
+                       SyncStatus.localOnly.rawValue,
+                       SyncStatus.needSync.rawValue)
                 .sorted(byKeyPath: "updatedDate", ascending: true)
             return Array(results)
         } catch {

@@ -150,6 +150,15 @@ class PostDashBoardVC: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        // 동기화 완료 시 통계 자동 새로고침
+        output.syncCompleted
+            .emit(onNext: { [weak self] result in
+                print("동기화 완료 - 대시보드 새로고침")
+                self?.loadStats()
+                self?.refreshRelay.accept(())
+            })
+            .disposed(by: disposeBag)
+        
         // 통계 데이터 바인딩
         statsRelay
             .compactMap { $0 }
