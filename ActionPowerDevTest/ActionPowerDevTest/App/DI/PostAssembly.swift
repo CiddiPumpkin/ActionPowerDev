@@ -27,7 +27,7 @@ class PostAssembly: Assembly {
         // MARK: - VM
         container.register(PostVM.self) { r in
             PostVM(repo: r ~> PostRepoType.self, networkMonitor: r ~> NetworkMonitor.self)
-        }
+        }.inObjectScope(.container)
         // MARK: - VC
         container.register(PostsVC.self) { r in
             let vc = PostsVC()
