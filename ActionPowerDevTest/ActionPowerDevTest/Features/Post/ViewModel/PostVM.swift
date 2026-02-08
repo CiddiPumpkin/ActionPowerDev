@@ -82,14 +82,14 @@ final class PostVM {
         let postsRelay = BehaviorRelay<[Post]>(value: [])
 
         input.loadPage
-            .do(onNext: { [weak self] _ in 
-                loadingRelay.accept(true) 
-                self?.currentPage = 0
-                self?.canLoadMore = true
-                self?.apiPostsRelay.accept([])
+            .do(onNext: { _ in 
+                loadingRelay.accept(true)
             })
             .flatMapLatest { [weak self] page -> Observable<[Post]> in
                 guard let self else { return .empty() }
+                
+                self.currentPage = 0
+                self.canLoadMore = true
 
                 return self.repo.getPosts(page: page, size: self.pageSize)
                     .map { $0.posts }
