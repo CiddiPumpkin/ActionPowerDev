@@ -18,11 +18,13 @@ protocol PostRepoType {
     func ensurePostInLocal(_ post: Post) -> Post  // API 게시글을 로컬 DB에 저장하고 localId 포함한 Post 반환
     func syncPendingPosts() -> Single<SyncResult>  // 대기 중인 게시글 동기화
     func getDashboardStats() -> DashboardStats  // 대시보드 통계 정보
+    func isDeleted(serverId: Int) -> Bool  // 해당 serverId가 삭제되었는지 확인
 }
 
 final class PostRepo: PostRepoType {
     private let postAPI: PostAPIDataSourceType
     private let db: DataBaseDataSourceType
+    private var deletedServerIds = Set<Int>()
     
     init(postAPI: PostAPIDataSourceType, db: DataBaseDataSourceType) {
         self.postAPI = postAPI
@@ -33,6 +35,24 @@ final class PostRepo: PostRepoType {
         let page = max(0, page)
         let skip = page * size
         return postAPI.getPosts(limit: size, skip: skip)
+            .map { [weak self] response in
+                // 앱 런타임 중 삭제된 게시글 필터링
+                guard let self = self else { return response }
+                
+                let filteredPosts = response.posts.filter { post in
+                    let isDeleted = self.deletedServerIds.contains(post.id)
+                    if isDeleted {
+                    }
+                    return !isDeleted
+                }
+                
+                return PostsResponse(
+                    posts: filteredPosts,
+                    total: response.total,
+                    skip: response.skip,
+                    limit: response.limit
+                )
+            }
     }
     
     func createPost(title: String, body: String, userId: Int = 1) -> Single<Post> {
@@ -127,8 +147,9 @@ final class PostRepo: PostRepoType {
         if let serverId = postObj.serverId, serverId > 0, postObj.syncStatus == .sync {
             return postAPI.deletePost(id: serverId)
                 .do(onSuccess: { [weak self] response in
-                    // API 성공 시 로컬 DB에서 삭제
+                    // API 성공 시 로컬 DB에서 삭제 및 삭제된 serverId 추적
                     self?.db.delete(localId: localId)
+                    self?.deletedServerIds.insert(serverId)
                 })
                 .catch { [weak self] error in
                     // API 실패 시에도 로컬에서는 삭제 처리 (needSync 상태로)
@@ -144,6 +165,11 @@ final class PostRepo: PostRepoType {
                         updatedDate: Date()
                     )
                     
+                    // 로컬에서는 삭제된 것으로 처리
+                    if let serverId = self?.db.fetch(localId: localId)?.serverId {
+                        self?.deletedServerIds.insert(serverId)
+                    }
+                    
                     // 삭제 응답 반환 (로컬 기준)
                     let response = PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil)
                     return .just(response)
@@ -152,6 +178,11 @@ final class PostRepo: PostRepoType {
             // 오프라인 생성 게시글인 경우 로컬에서만 삭제
             let serverId = postObj.serverId ?? -1
             db.delete(localId: localId)
+            
+            // serverId가 있으면 insert
+            if let serverId = postObj.serverId, serverId > 0 {
+                self.deletedServerIds.insert(serverId)
+            }
             
             let response = PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil)
             return .just(response)
@@ -334,6 +365,7 @@ final class PostRepo: PostRepoType {
             .do(onSuccess: { [weak self] _ in
                 print("삭제 동기화 성공 - localId: \(postData.localId)")
                 self?.db.delete(localId: postData.localId)
+                self?.deletedServerIds.insert(serverId)
             })
             .map { _ in SyncItemResult(localId: postData.localId, success: true, error: nil) }
             .catch { error in
@@ -343,6 +375,13 @@ final class PostRepo: PostRepoType {
                               lastSyncError: error.localizedDescription, updatedDate: Date())
                 return .just(SyncItemResult(localId: postData.localId, success: false, error: error.localizedDescription))
             }
+    }
+    
+    // MARK: - Utility
+    
+    /// 해당 serverId가 삭제되었는지 확인
+    func isDeleted(serverId: Int) -> Bool {
+        return deletedServerIds.contains(serverId)
     }
     
     // MARK: - Dashboard

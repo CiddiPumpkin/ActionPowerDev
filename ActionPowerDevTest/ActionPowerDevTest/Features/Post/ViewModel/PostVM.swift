@@ -233,8 +233,19 @@ final class PostVM {
         
         // 로컬 게시글의 serverId Set
         let localServerIds = Set(localPostObjs.compactMap { $0.serverId })
-        // API 게시글 중 로컬에 없는 것만 필터링
-        let filteredApiPosts = apiPosts.filter { !localServerIds.contains($0.id) }
+        
+        // API 게시글 필터링
+        let filteredApiPosts = apiPosts.filter { post in
+            let notInLocal = !localServerIds.contains(post.id)
+            let notDeleted = !repo.isDeleted(serverId: post.id)
+            
+            if !notDeleted {
+                print("삭제된 게시글 필터링 - serverId: \(post.id), title: \(post.title)")
+            }
+            
+            return notInLocal && notDeleted
+        }
+        
         // 로컬 게시글(최신순) + API 게시글
         return localPosts + filteredApiPosts
     }
