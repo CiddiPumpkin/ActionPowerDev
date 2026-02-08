@@ -95,6 +95,20 @@ class PostsTableViewCell: UITableViewCell {
         titleLabel.text = post.title
         bodyLabel.text = post.body
         
+        // 삭제 대기 중인 게시글 처리
+        if post.isDeleted == true && post.pendingStatus == .delete {
+            containerView.alpha = 0.5
+            containerView.backgroundColor = .systemGray6
+            syncStatusLabel.isHidden = false
+            syncStatusLabel.backgroundColor = .systemPurple
+            syncStatusLabel.text = "삭제 대기"
+            return
+        }
+        
+        // 일반 상태
+        containerView.alpha = 1.0
+        containerView.backgroundColor = .white
+        
         if let syncStatus = post.syncStatus {
             switch syncStatus {
             case .needSync:

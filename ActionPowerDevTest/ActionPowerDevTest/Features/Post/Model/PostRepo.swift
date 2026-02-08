@@ -349,12 +349,15 @@ final class PostRepo: PostRepoType {
     /// 대시보드 통계 정보 조회
     func getDashboardStats() -> DashboardStats {
         let allPosts = db.fetchVisibleSortedByCreatedDesc()
-        let localOnlyPosts = allPosts.filter { $0.syncStatus == .localOnly }
+        
+        // 삭제 대기 중이지 않은 게시글만 카운팅
+        let activePosts = allPosts.filter { $0.isDeleted == false }
+        let localOnlyPosts = activePosts.filter { $0.syncStatus == .localOnly }
         let needSyncPosts = allPosts.filter { $0.syncStatus == .needSync || $0.pendingStatus != .none }
         let recentPosts = db.fetchRecentTop5().map { $0.toPost() }
         
         return DashboardStats(
-            totalCount: allPosts.count,
+            totalCount: activePosts.count,
             localOnlyCount: localOnlyPosts.count,
             needSyncCount: needSyncPosts.count,
             recentPosts: recentPosts

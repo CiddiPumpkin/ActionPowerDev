@@ -111,8 +111,9 @@ final class DataBaseDataSource: DataBaseDataSourceType {
     func fetchVisibleSortedByCreatedDesc() -> [PostObj] {
         do {
             let realm = try realm()
+            // 삭제 대기 중인 게시글(isDeleted == true && pendingStatus == .delete)도 포함
+            // 완전히 동기화되어 삭제된 것만 제외
             let results = realm.objects(PostObj.self)
-                .filter("isDeleted == false")
                 .sorted(byKeyPath: "createdDate", ascending: false)
             return Array(results)
         } catch {
@@ -125,8 +126,9 @@ final class DataBaseDataSource: DataBaseDataSourceType {
         do {
             let realm = try realm()
             // pendingStatus가 none이 아니거나, syncStatus가 localOnly/needSync인 것들
+            // 삭제 대기 중인 게시글(isDeleted == true)도 포함
             let results = realm.objects(PostObj.self)
-                .filter("isDeleted == false AND ((pendingStatus != %@) OR (syncStatus == %@) OR (syncStatus == %@))",
+                .filter("(pendingStatus != %@) OR (syncStatus == %@) OR (syncStatus == %@)",
                        PendingStatus.none.rawValue,
                        SyncStatus.localOnly.rawValue,
                        SyncStatus.needSync.rawValue)
@@ -141,8 +143,8 @@ final class DataBaseDataSource: DataBaseDataSourceType {
     func fetchRecentTop5() -> [PostObj] {
         do {
             let realm = try realm()
+            // 삭제 대기 중인 게시글도 포함
             let results = realm.objects(PostObj.self)
-                .filter("isDeleted == false")
                 .sorted(byKeyPath: "updatedDate", ascending: false)
             return Array(results.prefix(5))
         } catch {

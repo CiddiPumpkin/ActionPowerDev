@@ -21,7 +21,9 @@ struct Post: Decodable {
     let body: String
     let userId: Int?
     let localId: String?  // 로컬 식별자(API 응답엔 없으나 API Post / Local Post 병합 시 사용)
-    let syncStatus: SyncStatus?  // 동기화 상태 (로컬 Post만 해당)
+    let syncStatus: SyncStatus?  // 동기화 상태
+    let isDeleted: Bool?  // 삭제 대기 상태
+    let pendingStatus: PendingStatus?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -30,13 +32,15 @@ struct Post: Decodable {
         case userId
     }
     
-    init(id: Int, title: String, body: String, userId: Int?, localId: String? = nil, syncStatus: SyncStatus? = nil) {
+    init(id: Int, title: String, body: String, userId: Int?, localId: String? = nil, syncStatus: SyncStatus? = nil, isDeleted: Bool? = nil, pendingStatus: PendingStatus? = nil) {
         self.id = id
         self.title = title
         self.body = body
         self.userId = userId
         self.localId = localId
         self.syncStatus = syncStatus
+        self.isDeleted = isDeleted
+        self.pendingStatus = pendingStatus
     }
     
     init(from decoder: Decoder) throws {
@@ -47,6 +51,8 @@ struct Post: Decodable {
         self.userId = try container.decodeIfPresent(Int.self, forKey: .userId)
         self.localId = nil
         self.syncStatus = nil
+        self.isDeleted = nil
+        self.pendingStatus = nil
     }
 }
 /// DELETE /posts/{id}

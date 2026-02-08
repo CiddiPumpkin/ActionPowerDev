@@ -41,7 +41,9 @@ extension PostObj {
             body: self.body,
             userId: nil,
             localId: self.localId,
-            syncStatus: self.syncStatus
+            syncStatus: self.syncStatus,
+            isDeleted: self.isDeleted,
+            pendingStatus: self.pendingStatus
         )
     }
 }
