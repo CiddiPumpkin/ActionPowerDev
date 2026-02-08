@@ -71,11 +71,12 @@ class PostDashBoardVC: UIViewController {
         super.viewDidLoad()
         setupUI()
         bind()
-        // loadStats()는 API 로드 후 자동 호출됨
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // 로컬 DB와 API 병합 후 통계 갱신
+        refreshRelay.accept(())
         loadStats()
     }
     // MARK: - Setup UI
@@ -168,6 +169,14 @@ class PostDashBoardVC: UIViewController {
         output.syncCompleted
             .emit(onNext: { [weak self] result in
                 print("동기화 완료 - 대시보드 새로고침")
+                self?.loadStats()
+            })
+            .disposed(by: disposeBag)
+        
+        // refresh 완료 시 통계 갱신
+        output.posts
+            .skip(1)
+            .drive(onNext: { [weak self] _ in
                 self?.loadStats()
             })
             .disposed(by: disposeBag)
