@@ -160,7 +160,8 @@ class PostDashBoardVC: UIViewController {
         // API 데이터 먼저 로드
         let input = PostVM.Input(
             loadPage: loadPageRelay.asObservable(),
-            refresh: refreshRelay.asObservable()
+            refresh: refreshRelay.asObservable(),
+            loadNextPage: .never()
         )
         let output = vm.transform(input: input)
         

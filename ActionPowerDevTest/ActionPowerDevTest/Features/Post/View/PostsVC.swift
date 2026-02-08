@@ -66,6 +66,7 @@ final class PostsVC: UIViewController {
     // VM-Input
     private let loadPageRelay = PublishRelay<Int>()
     private let refreshRelay = PublishRelay<Void>()
+    private let loadNextPageRelay = PublishRelay<Void>()
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -132,7 +133,8 @@ final class PostsVC: UIViewController {
         guard let vm = self.vm else { return }
         let input = PostVM.Input(
             loadPage: loadPageRelay.asObservable(),
-            refresh: refreshRelay.asObservable()
+            refresh: refreshRelay.asObservable(),
+            loadNextPage: loadNextPageRelay.asObservable()
         )
         let output = vm.transform(input: input)
         
@@ -176,6 +178,16 @@ final class PostsVC: UIViewController {
                 print("동기화 완료 - 게시글 목록 새로고침")
                 self?.refreshRelay.accept(())
             })
+            .disposed(by: disposeBag)
+        
+        // 마지막 셀이 보여질 때 다음 페이지 로드
+        tableView.rx.willDisplayCell
+            .withLatestFrom(output.posts) { ($0, $1) }
+            .filter { cellInfo, posts in
+                return cellInfo.indexPath.row == posts.count - 1
+            }
+            .map { _ in () }
+            .bind(to: loadNextPageRelay)
             .disposed(by: disposeBag)
         
         loadPageRelay.accept(0)

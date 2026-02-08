@@ -16,6 +16,8 @@ final class PostVM {
         let loadPage: Observable<Int>
         /// 새로고침 트리거 (게시글 생성/수정/삭제 이후)
         let refresh: Observable<Void>
+        /// 페이지네이션 트리거
+        let loadNextPage: Observable<Void>
     }
     struct Output {
         let posts: Driver<[Post]>
@@ -32,6 +34,11 @@ final class PostVM {
     // 현재 API에서 가져온 게시글들
     private let apiPostsRelay = BehaviorRelay<[Post]>(value: [])
     
+    // 페이지네이션
+    private var currentPage = 0
+    private var canLoadMore = true
+    private let pageSize = 10
+    
     // 동기화 결과
     private let syncResultRelay = PublishRelay<SyncResult>()
     
@@ -40,7 +47,6 @@ final class PostVM {
         self.repo = repo
         self.networkMonitor = networkMonitor
         
-        // 네트워크 연결 상태 모니터링 - 연결되면 자동 동기화
         setupNetworkMonitoring()
     }
     
@@ -75,13 +81,17 @@ final class PostVM {
         let errorRelay = PublishRelay<String>()
         let postsRelay = BehaviorRelay<[Post]>(value: [])
 
-        // API에서 게시글 로드
         input.loadPage
-            .do(onNext: { _ in loadingRelay.accept(true) })
+            .do(onNext: { [weak self] _ in 
+                loadingRelay.accept(true) 
+                self?.currentPage = 0
+                self?.canLoadMore = true
+                self?.apiPostsRelay.accept([])
+            })
             .flatMapLatest { [weak self] page -> Observable<[Post]> in
                 guard let self else { return .empty() }
 
-                return self.repo.getPosts(page: page, size: 10)
+                return self.repo.getPosts(page: page, size: self.pageSize)
                     .map { $0.posts }
                     .asObservable()
                     .catch { error in
@@ -89,16 +99,57 @@ final class PostVM {
                         return .empty()
                     }
             }
-            .do(onNext: { _ in loadingRelay.accept(false) },
-                onError: { _ in loadingRelay.accept(false) },
-                onCompleted: { loadingRelay.accept(false) })
+            .do(onNext: { _ in loadingRelay.accept(false) })
             .subscribe(onNext: { [weak self] apiPosts in
                 guard let self = self else { return }
+                self.canLoadMore = apiPosts.count >= self.pageSize
                 self.apiPostsRelay.accept(apiPosts)
                 
                 // API 게시글 + 로컬 게시글 병합
                 let mergedPosts = self.mergeWithLocalPosts(apiPosts: apiPosts)
                 postsRelay.accept(mergedPosts)
+            })
+            .disposed(by: disposeBag)
+        
+        // 페이지네이션
+        input.loadNextPage
+            .withLatestFrom(networkMonitor.isConnected)
+            .filter { [weak self] isConnected in
+                guard let self = self else { return false }
+                return isConnected && self.canLoadMore && !loadingRelay.value
+            }
+            .do(onNext: { [weak self] _ in
+                loadingRelay.accept(true)
+                self?.currentPage += 1
+            })
+            .flatMapLatest { [weak self] _ -> Observable<[Post]> in
+                guard let self = self else { return .empty() }
+                
+                return self.repo.getPosts(page: self.currentPage, size: self.pageSize)
+                    .map { $0.posts }
+                    .asObservable()
+                    .catch { error in
+                        errorRelay.accept(error.localizedDescription)
+                        return .empty()
+                    }
+            }
+            .do(onNext: { _ in loadingRelay.accept(false) })
+            .subscribe(onNext: { [weak self] newPosts in
+                guard let self = self else { return }
+                
+                // 더 이상 로드할 게시글이 없으면 플래그 변경
+                self.canLoadMore = newPosts.count >= self.pageSize
+                
+                // 기존 API 게시글에 새 게시글 추가
+                let currentApiPosts = self.apiPostsRelay.value
+                let updatedApiPosts = currentApiPosts + newPosts
+                self.apiPostsRelay.accept(updatedApiPosts)
+                
+                // API 게시글 + 로컬 게시글 병합
+                let mergedPosts = self.mergeWithLocalPosts(apiPosts: updatedApiPosts)
+                postsRelay.accept(mergedPosts)
+                
+                print("페이지 \(self.currentPage) 로드 완료 - 새로 \(newPosts.count)개, 총 \(updatedApiPosts.count)개")
             })
             .disposed(by: disposeBag)
         
