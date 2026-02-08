@@ -250,23 +250,24 @@ class PostDetailVC: UIViewController {
                     contentTextView.rx.text.orEmpty
                 )
             )
+            .do(onNext: { [weak self] _ in
+                self?.editButton.isEnabled = false
+            })
             .flatMapLatest { [weak self] data -> Observable<Post> in
                 guard let self = self, let vm = self.vm else {
                     return .empty()
                 }
                 let (title, body) = data
                 
-                // 로딩 표시
-                self.editButton.isEnabled = false
-                
                 return vm.updatePost(localId: self.localId, title: title, body: body)
                     .asObservable()
+                    .observe(on: MainScheduler.instance)
                     .catch { error in
-                        // 에러 처리
                         self.showErrorAlert(message: error.localizedDescription)
                         return .empty()
                     }
             }
+            .observe(on: MainScheduler.instance)
             .subscribe(with: self) { owner, post in
                 print("게시글 수정 성공: \(post)")
                 owner.coordinator?.didUpdatePost()
@@ -290,13 +291,12 @@ class PostDetailVC: UIViewController {
                 alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak owner] _ in
                     guard let owner = owner, let vm = owner.vm else { return }
                     
-                    // 로딩 표시
                     owner.deleteButton.isEnabled = false
                     
                     vm.deletePost(localId: owner.localId)
                         .asObservable()
+                        .observe(on: MainScheduler.instance)
                         .catch { error in
-                            // 에러 처리
                             owner.showDeleteErrorAlert(message: error.localizedDescription)
                             return .empty()
                         }
