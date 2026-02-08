@@ -150,10 +150,10 @@ final class PostRepo: PostRepoType {
                 }
         } else {
             // 오프라인 생성 게시글인 경우 로컬에서만 삭제
+            let serverId = postObj.serverId ?? -1
             db.delete(localId: localId)
             
-            // 삭제 응답 반환 (serverId가 없으면 -1)
-            let response = PostDeleteResponse(id: postObj.serverId ?? -1, isDeleted: true, deletedOn: nil)
+            let response = PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil)
             return .just(response)
         }
     }
