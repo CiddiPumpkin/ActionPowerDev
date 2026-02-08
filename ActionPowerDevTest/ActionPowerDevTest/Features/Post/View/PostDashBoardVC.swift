@@ -76,7 +76,7 @@ class PostDashBoardVC: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshRelay.accept(()) // API 새로고침
+        loadStats()
     }
     // MARK: - Setup UI
     private func setupUI() {
@@ -157,28 +157,18 @@ class PostDashBoardVC: UIViewController {
     private func bindVM() {
         guard let vm = vm else { return }
         
-        // API 데이터 먼저 로드
         let input = PostVM.Input(
-            loadPage: loadPageRelay.asObservable(),
+            loadPage: .never(),
             refresh: refreshRelay.asObservable(),
             loadNextPage: .never()
         )
         let output = vm.transform(input: input)
-        
-        // API 로드 완료 후 통계 업데이트
-        output.posts
-            .drive(onNext: { [weak self] posts in
-                print("API 로드 완료 - \(posts.count)개")
-                self?.loadStats()
-            })
-            .disposed(by: disposeBag)
         
         // 동기화 완료 시 통계 자동 새로고침
         output.syncCompleted
             .emit(onNext: { [weak self] result in
                 print("동기화 완료 - 대시보드 새로고침")
                 self?.loadStats()
-                self?.refreshRelay.accept(())
             })
             .disposed(by: disposeBag)
         
@@ -226,10 +216,6 @@ class PostDashBoardVC: UIViewController {
                 owner.coordinator?.moveToPostDetail(post: post)
             }
             .disposed(by: disposeBag)
-
-        
-        // 초기 API 로드 실행
-        loadPageRelay.accept(0)
     }
     
     // MARK: - Functions
