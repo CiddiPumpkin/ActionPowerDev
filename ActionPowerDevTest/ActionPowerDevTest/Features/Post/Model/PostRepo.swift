@@ -70,7 +70,7 @@ final class PostRepo: PostRepoType {
                         serverId: nil,
                         isDeleted: nil,
                         pendingStatus: nil,
-                        syncStatus: nil,
+                        syncStatus: .sync,
                         lastSyncError: nil,
                         updatedDate: Date()
                     )
