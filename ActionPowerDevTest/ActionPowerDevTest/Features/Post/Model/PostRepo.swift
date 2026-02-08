@@ -138,55 +138,39 @@ final class PostRepo: PostRepoType {
     }
     
     func deletePost(localId: String) -> Single<PostDeleteResponse> {
-        // localId로 로컬 DB에서 찾기
         guard let postObj = db.fetch(localId: localId) else {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
         
-        // serverId가 유효하고 syncStatus가 .sync인 경우 서버 API 호출
-        if let serverId = postObj.serverId, serverId > 0, postObj.syncStatus == .sync {
-            return postAPI.deletePost(id: serverId)
-                .do(onSuccess: { [weak self] response in
-                    // API 성공 시 로컬 DB에서 삭제 및 삭제된 serverId 추적
-                    self?.db.delete(localId: localId)
-                    self?.deletedServerIds.insert(serverId)
-                })
-                .catch { [weak self] error in
-                    // API 실패 시에도 로컬에서는 삭제 처리 (needSync 상태로)
-                    self?.db.update(
-                        localId: localId,
-                        title: nil,
-                        body: nil,
-                        serverId: nil,
-                        isDeleted: true,
-                        pendingStatus: .delete,
-                        syncStatus: .needSync,
-                        lastSyncError: error.localizedDescription,
-                        updatedDate: Date()
-                    )
-                    
-                    // 로컬에서는 삭제된 것으로 처리
-                    if let serverId = self?.db.fetch(localId: localId)?.serverId {
-                        self?.deletedServerIds.insert(serverId)
-                    }
-                    
-                    // 삭제 응답 반환 (로컬 기준)
-                    let response = PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil)
-                    return .just(response)
-                }
-        } else {
-            // 오프라인 생성 게시글인 경우 로컬에서만 삭제
-            let serverId = postObj.serverId ?? -1
+        if postObj.syncStatus == .localOnly {
             db.delete(localId: localId)
-            
-            // serverId가 있으면 insert
-            if let serverId = postObj.serverId, serverId > 0 {
-                self.deletedServerIds.insert(serverId)
-            }
-            
-            let response = PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil)
-            return .just(response)
+            return .just(PostDeleteResponse(id: -1, isDeleted: true, deletedOn: nil))
         }
+        
+        guard let serverId = postObj.serverId, serverId > 0 else {
+            return .error(NSError(domain: "PostRepo", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid serverId"]))
+        }
+        
+        return postAPI.deletePost(id: serverId)
+            .do(onSuccess: { [weak self] _ in
+                self?.db.delete(localId: localId)
+                self?.deletedServerIds.insert(serverId)
+            })
+            .catch { [weak self] error in
+                // 오프라인이면 삭제 대기 상태로 변경
+                self?.db.update(
+                    localId: localId,
+                    title: nil,
+                    body: nil,
+                    serverId: nil,
+                    isDeleted: true,
+                    pendingStatus: .delete,
+                    syncStatus: .needSync,
+                    lastSyncError: error.localizedDescription,
+                    updatedDate: Date()
+                )
+                return .just(PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil))
+            }
     }
     
     // MARK: - Local DB
