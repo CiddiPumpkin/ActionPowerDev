@@ -116,15 +116,14 @@ final class PostRepo: PostRepoType {
                     return .error(error)
                 }
         } else {
-            // 오프라인 생성 게시글 또는 needSync 상태이면 로컬만 업데이트
             db.update(
                 localId: localId,
                 title: title,
                 body: body,
                 serverId: nil,
                 isDeleted: nil,
-                pendingStatus: postObj.syncStatus == .localOnly ? nil : .update,
-                syncStatus: postObj.syncStatus == .localOnly ? .localOnly : .needSync,
+                pendingStatus: .update,
+                syncStatus: .needSync,
                 lastSyncError: nil,
                 updatedDate: Date()
             )
@@ -141,10 +140,18 @@ final class PostRepo: PostRepoType {
         guard let postObj = db.fetch(localId: localId) else {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
-        
-        // 로컬 전용 게시글은 바로 삭제
         if postObj.syncStatus == .localOnly {
-            db.delete(localId: localId)
+            db.update(
+                localId: localId,
+                title: nil,
+                body: nil,
+                serverId: nil,
+                isDeleted: true,
+                pendingStatus: .delete,
+                syncStatus: .needSync,
+                lastSyncError: nil,
+                updatedDate: Date()
+            )
             return .just(PostDeleteResponse(id: -1, isDeleted: true, deletedOn: nil))
         }
         
@@ -245,7 +252,6 @@ final class PostRepo: PostRepoType {
     
     /// 대기 중인 게시글들을 서버와 동기화
     func syncPendingPosts() -> Single<SyncResult> {
-        // ⚠️ Realm 객체를 다른 스레드에서 사용하지 않도록 필요한 데이터만 추출
         let pendingPosts = db.fetchPendingPosts()
         
         guard !pendingPosts.isEmpty else {
@@ -321,7 +327,20 @@ final class PostRepo: PostRepoType {
     
     private func syncUpdatePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
         guard let serverId = postData.serverId else {
-            return .just(SyncItemResult(localId: postData.localId, success: false, error: "No serverId"))
+            print("수정 동기화 - localId: \(postData.localId) (localOnly, API 호출 없이 즉시 처리)")
+            // pendingStatus와 syncStatus를 제거하여 일반 게시글처럼 만듦
+            self.db.update(
+                localId: postData.localId,
+                title: nil,
+                body: nil,
+                serverId: nil,
+                isDeleted: nil,
+                pendingStatus: .none,
+                syncStatus: .localOnly,
+                lastSyncError: nil,
+                updatedDate: Date()
+            )
+            return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
         }
         
         return postAPI.updatePost(id: serverId, req: PostUpdateRequest(title: postData.title, body: postData.body))
@@ -343,7 +362,7 @@ final class PostRepo: PostRepoType {
     
     private func syncDeletePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
         guard let serverId = postData.serverId else {
-            print("삭제 동기화 - localId: \(postData.localId) (로컬만)")
+            print("삭제 동기화 - localId: \(postData.localId) (localOnly, API 호출 없이 즉시 삭제)")
             self.db.delete(localId: postData.localId)
             return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
         }

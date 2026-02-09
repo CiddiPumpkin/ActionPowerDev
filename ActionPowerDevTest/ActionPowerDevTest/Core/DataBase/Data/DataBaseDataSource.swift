@@ -128,12 +128,17 @@ final class DataBaseDataSource: DataBaseDataSourceType {
         do {
             let realm = try realm()
             let results = realm.objects(PostObj.self)
-                .filter("(pendingStatus != %@) OR (syncStatus == %@) OR (syncStatus == %@)",
-                       PendingStatus.none.rawValue,
-                       SyncStatus.localOnly.rawValue,
-                       SyncStatus.needSync.rawValue)
                 .sorted(byKeyPath: "updatedDate", ascending: true)
-            return Array(results)
+            
+            let filtered = results.filter { postObj in
+                // pendingStatus가 none이 아니거나, syncStatus가 needSync/fail인 경우
+                let hasPendingStatus = postObj.pendingStatus != .none
+                let needsSync = postObj.syncStatus == .needSync || postObj.syncStatus == .fail
+                
+                return hasPendingStatus || needsSync
+            }
+            
+            return Array(filtered)
         } catch {
             print("Realm Post fetchPendingPosts Error:", error)
             return []
