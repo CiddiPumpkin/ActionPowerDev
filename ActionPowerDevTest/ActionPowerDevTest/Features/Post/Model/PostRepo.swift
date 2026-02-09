@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import RxRelay
 
 protocol PostRepoType {
     func getPosts(page: Int, size: Int) -> Single<PostsResponse>
@@ -24,11 +25,13 @@ protocol PostRepoType {
 final class PostRepo: PostRepoType {
     private let postAPI: PostAPIDataSourceType
     private let db: DataBaseDataSourceType
+    private let networkMonitor: NetworkMonitor
     private var deletedServerIds = Set<Int>()
     
-    init(postAPI: PostAPIDataSourceType, db: DataBaseDataSourceType) {
+    init(postAPI: PostAPIDataSourceType, db: DataBaseDataSourceType, networkMonitor: NetworkMonitor) {
         self.postAPI = postAPI
         self.db = db
+        self.networkMonitor = networkMonitor
     }
     // MARK: - Post
     func getPosts(page: Int, size: Int = 10) -> Single<PostsResponse> {
@@ -75,6 +78,53 @@ final class PostRepo: PostRepoType {
         // localId로 로컬 DB에서 찾기
         guard let postObj = db.fetch(localId: localId) else {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
+        }
+        
+        // 앱에서 생성 성공한 게시글 조건:
+        // createdLocally = true && syncStatus = .sync && pendingStatus = .none
+        let isAppCreatedSuccessPost = postObj.createdLocally &&  postObj.syncStatus == .sync && postObj.pendingStatus == .none
+        
+        if isAppCreatedSuccessPost {
+            let isOnline = networkMonitor.isConnected.value
+            
+            if isOnline {
+                // 온라인 - API 호출 없이 로컬 DB만 즉시 업데이트 (상태 유지)
+                db.update(
+                    localId: localId,
+                    title: title,
+                    body: body,
+                    serverId: nil,
+                    isDeleted: nil,
+                    pendingStatus: .none,
+                    syncStatus: .sync,
+                    lastSyncError: nil,
+                    updatedDate: Date()
+                )
+                
+                guard let updatedPostObj = db.fetch(localId: localId) else {
+                    return .error(NSError(domain: "PostRepo", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch updated post"]))
+                }
+                return .just(updatedPostObj.toPost())
+                
+            } else {
+                // 오프라인 - 연동 필요 상태로 변경 (needSync)
+                db.update(
+                    localId: localId,
+                    title: title,
+                    body: body,
+                    serverId: nil,
+                    isDeleted: nil,
+                    pendingStatus: .update,
+                    syncStatus: .needSync,
+                    lastSyncError: "네트워크 연결 끊김",
+                    updatedDate: Date()
+                )
+                
+                guard let updatedPostObj = db.fetch(localId: localId) else {
+                    return .error(NSError(domain: "PostRepo", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch updated post"]))
+                }
+                return .just(updatedPostObj.toPost())
+            }
         }
         
         // serverId가 유효하고 syncStatus가 .sync인 경우 서버 API 호출
@@ -140,6 +190,46 @@ final class PostRepo: PostRepoType {
         guard let postObj = db.fetch(localId: localId) else {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
+        
+        // 앱에서 생성 성공한 게시글 조건:
+        // createdLocally = true && syncStatus = .sync && pendingStatus = .none
+        let isAppCreatedSuccessPost = postObj.createdLocally && 
+                                       postObj.syncStatus == .sync && 
+                                       postObj.pendingStatus == .none
+        
+        if isAppCreatedSuccessPost {
+            let isOnline = networkMonitor.isConnected.value
+            
+            if isOnline {
+                // 온라인: API 호출 없이 로컬 DB에서 즉시 삭제
+                db.delete(localId: localId)
+                
+                // serverId가 있다면 deletedServerIds에 추가
+                if let serverId = postObj.serverId {
+                    self.deletedServerIds.insert(serverId)
+                }
+                
+                return .just(PostDeleteResponse(id: postObj.serverId ?? -1, isDeleted: true, deletedOn: nil))
+                
+            } else {
+                // 오프라인: 연동 필요 상태로 변경 (needSync)
+                db.update(
+                    localId: localId,
+                    title: nil,
+                    body: nil,
+                    serverId: nil,
+                    isDeleted: true,
+                    pendingStatus: .delete,
+                    syncStatus: .needSync,
+                    lastSyncError: "네트워크 연결 끊김",
+                    updatedDate: Date()
+                )
+                
+                return .just(PostDeleteResponse(id: postObj.serverId ?? -1, isDeleted: true, deletedOn: nil))
+            }
+        }
+        
+        // 로컬 전용 게시글(syncStatus == .localOnly)
         if postObj.syncStatus == .localOnly {
             db.update(
                 localId: localId,

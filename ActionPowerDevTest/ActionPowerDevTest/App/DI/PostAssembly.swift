@@ -22,7 +22,11 @@ class PostAssembly: Assembly {
         }
         // MARK: - Repository
         container.register(PostRepoType.self) { r in
-            PostRepo(postAPI: r ~> PostAPIDataSourceType.self, db: r ~> DataBaseDataSourceType.self)
+            PostRepo(
+                postAPI: r ~> PostAPIDataSourceType.self, 
+                db: r ~> DataBaseDataSourceType.self,
+                networkMonitor: r ~> NetworkMonitor.self
+            )
         }
         // MARK: - VM
         container.register(PostVM.self) { r in
