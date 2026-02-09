@@ -296,17 +296,23 @@ class PostDetailVC: UIViewController {
                     vm.deletePost(localId: owner.localId)
                         .asObservable()
                         .observe(on: MainScheduler.instance)
-                        .catch { error in
-                            owner.showDeleteErrorAlert(message: error.localizedDescription)
-                            return .empty()
-                        }
-                        .subscribe(onNext: { response in
-                            print("게시글 삭제 성공: \(response)")
-                            owner.coordinator?.didDeletePost()
-                            owner.showSuccessAlert(message: "게시글이 삭제되었습니다.") {
-                                owner.dismiss(animated: true)
+                        .subscribe(
+                            onNext: { response in
+                                print("게시글 삭제 성공: \(response)")
+                                owner.coordinator?.didDeletePost()
+                                owner.showSuccessAlert(message: "게시글이 삭제되었습니다.") {
+                                    owner.dismiss(animated: true)
+                                }
+                            },
+                            onError: { error in
+                                print("게시글 삭제 오류 - 삭제 대기열에 추가됨: \(error.localizedDescription)")
+                                // 오프라인 삭제의 경우 삭제 대기 상태로 전환됨
+                                owner.coordinator?.didDeletePost()
+                                owner.showInfoAlert(message: "오프라인 상태입니다.\n게시글이 삭제 대기열에 추가되었습니다.") {
+                                    owner.dismiss(animated: true)
+                                }
                             }
-                        })
+                        )
                         .disposed(by: owner.disposeBag)
                 })
                 
@@ -336,6 +342,14 @@ class PostDetailVC: UIViewController {
     
     private func showSuccessAlert(message: String, completion: @escaping () -> Void) {
         let alert = UIAlertController(title: "성공", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+            completion()
+        })
+        present(alert, animated: true)
+    }
+    
+    private func showInfoAlert(message: String, completion: @escaping () -> Void) {
+        let alert = UIAlertController(title: "알림", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
             completion()
         })

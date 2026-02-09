@@ -142,6 +142,7 @@ final class PostRepo: PostRepoType {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
         
+        // 로컬 전용 게시글은 바로 삭제
         if postObj.syncStatus == .localOnly {
             db.delete(localId: localId)
             return .just(PostDeleteResponse(id: -1, isDeleted: true, deletedOn: nil))
@@ -153,6 +154,7 @@ final class PostRepo: PostRepoType {
         
         return postAPI.deletePost(id: serverId)
             .do(onSuccess: { [weak self] _ in
+                // API 성공 시 로컬 DB에서 완전히 삭제
                 self?.db.delete(localId: localId)
                 self?.deletedServerIds.insert(serverId)
             })
@@ -169,6 +171,7 @@ final class PostRepo: PostRepoType {
                     lastSyncError: error.localizedDescription,
                     updatedDate: Date()
                 )
+                // 삭제 대기 상태로 처리되었음을 응답
                 return .just(PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil))
             }
     }
