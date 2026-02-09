@@ -329,9 +329,26 @@ final class PostRepo: PostRepoType {
     }
     
     private func syncUpdatePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
+        // 앱에서 생성한 게시글은 API 호출 없이 pending 상태만 해제
+        if postData.createdLocally {
+            print("수정 동기화 - localId: \(postData.localId) (앱에서 생성한 게시글, API 호출 없이 즉시 처리)")
+            self.db.update(
+                localId: postData.localId,
+                title: nil,
+                body: nil,
+                serverId: nil,
+                isDeleted: nil,
+                pendingStatus: .none,
+                syncStatus: postData.serverId == nil ? .localOnly : .sync,
+                lastSyncError: nil,
+                updatedDate: Date()
+            )
+            return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
+        }
+        
+        // serverId가 없으면 로컬 전용
         guard let serverId = postData.serverId else {
             print("수정 동기화 - localId: \(postData.localId) (localOnly, API 호출 없이 즉시 처리)")
-            // pendingStatus와 syncStatus를 제거하여 일반 게시글처럼 만듦
             self.db.update(
                 localId: postData.localId,
                 title: nil,
@@ -346,6 +363,7 @@ final class PostRepo: PostRepoType {
             return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
         }
         
+        // 서버에서 가져온 게시글만 수정 API 호출
         return postAPI.updatePost(id: serverId, req: PostUpdateRequest(title: postData.title, body: postData.body))
             .do(onSuccess: { [weak self] _ in
                 print("수정 동기화 성공 - localId: \(postData.localId)")
