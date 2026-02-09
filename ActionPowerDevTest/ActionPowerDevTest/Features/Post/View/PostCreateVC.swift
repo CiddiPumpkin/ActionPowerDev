@@ -254,7 +254,6 @@ class PostCreateVC: UIViewController {
                     }
             }
             .subscribe(with: self) { owner, post in
-                print("게시글 생성 성공: \(post)")
                 owner.coordinator?.didCreatePost()
                 owner.showSuccessAlert(message: "게시글이 생성되었습니다.") {
                     owner.dismiss(animated: true)
