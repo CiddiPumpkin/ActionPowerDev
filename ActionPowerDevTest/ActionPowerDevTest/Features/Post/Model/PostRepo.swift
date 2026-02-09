@@ -26,6 +26,8 @@ final class PostRepo: PostRepoType {
     private let postAPI: PostAPIDataSourceType
     private let db: DataBaseDataSourceType
     private let networkMonitor: NetworkMonitor
+    
+    // 삭제된 서버 ID를 추적하여 중복 표시 방지
     private var deletedServerIds = Set<Int>()
     
     init(postAPI: PostAPIDataSourceType, db: DataBaseDataSourceType, networkMonitor: NetworkMonitor) {
@@ -34,6 +36,7 @@ final class PostRepo: PostRepoType {
         self.networkMonitor = networkMonitor
     }
     
+    // MARK: - Read
     func getPosts(page: Int, size: Int = 10) -> Single<PostsResponse> {
         let skip = max(0, page) * size
         return postAPI.getPosts(limit: size, skip: skip)
@@ -43,6 +46,8 @@ final class PostRepo: PostRepoType {
                 return PostsResponse(posts: filteredPosts, total: response.total, skip: response.skip, limit: response.limit)
             }
     }
+    
+    // MARK: - Create
     func createPost(title: String, body: String, userId: Int = 1) -> Single<Post> {
         let request = PostCreateRequest(title: title, body: body, userId: userId)
         return postAPI.createPost(req: request)
@@ -54,21 +59,26 @@ final class PostRepo: PostRepoType {
                 return .just(self.createLocalOnlyPost(title: title, body: body, userId: userId))
             }
     }
+    
+    // MARK: - Update
     func updatePost(localId: String, title: String? = nil, body: String? = nil) -> Single<Post> {
         guard let postObj = db.fetch(localId: localId) else {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
         
+        // 앱에서 생성해서 서버 동기화까지 성공한 포스트
         let isAppCreatedSuccessPost = postObj.createdLocally && postObj.syncStatus == .sync && postObj.pendingStatus == .none
         
         if isAppCreatedSuccessPost {
             return updateAppCreatedPost(localId: localId, title: title, body: body, isOnline: networkMonitor.isConnected.value)
         }
         
+        // 서버에 존재하며 동기화된 포스트
         if let serverId = postObj.serverId, serverId > 0, postObj.syncStatus == .sync {
             return updateServerPost(localId: localId, serverId: serverId, title: title, body: body)
         }
         
+        // 로컬 전용 포스트
         return updateLocalPost(localId: localId, title: title, body: body)
     }
     
@@ -114,17 +124,22 @@ final class PostRepo: PostRepoType {
         }
         return .just(updatedPostObj.toPost())
     }
+    
+    // MARK: - Delete
+    
     func deletePost(localId: String) -> Single<PostDeleteResponse> {
         guard let postObj = db.fetch(localId: localId) else {
             return .error(NSError(domain: "PostRepo", code: 404, userInfo: [NSLocalizedDescriptionKey: "Post not found"]))
         }
         
+        // 앱에서 생성해서 서버 동기화까지 성공한 포스트
         let isAppCreatedSuccessPost = postObj.createdLocally && postObj.syncStatus == .sync && postObj.pendingStatus == .none
         
         if isAppCreatedSuccessPost {
             return deleteAppCreatedPost(postObj: postObj, isOnline: networkMonitor.isConnected.value)
         }
         
+        // 로컬 전용 포스트는 삭제 마크만
         if postObj.syncStatus == .localOnly {
             return markAsDeleted(localId: localId, serverId: -1)
         }
@@ -170,6 +185,7 @@ final class PostRepo: PostRepoType {
         return .just(PostDeleteResponse(id: serverId, isDeleted: true, deletedOn: nil))
     }
     
+    // MARK: - Local Storage
     func getLocalPosts() -> [PostObj] {
         return db.fetchVisibleSortedByCreatedDesc()
     }
@@ -223,6 +239,7 @@ final class PostRepo: PostRepoType {
         return post
     }
     
+    // MARK: - Sync
     func syncPendingPosts() -> Single<SyncResult> {
         let pendingPosts = db.fetchPendingPosts()
         
@@ -259,6 +276,8 @@ final class PostRepo: PostRepoType {
                 )
             }
     }
+    
+    // 대기 중인 생성 요청 동기화
     private func syncCreatePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
         let request = PostCreateRequest(title: postData.title, body: postData.body, userId: 1)
         
@@ -276,7 +295,9 @@ final class PostRepo: PostRepoType {
             }
     }
     
+    // 대기 중인 수정 요청 동기화
     private func syncUpdatePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
+        // 앱에서 생성한 포스트는 서버 업데이트 불필요
         if postData.createdLocally {
             db.update(localId: postData.localId, title: nil, body: nil, serverId: nil, isDeleted: nil,
                      pendingStatus: .none, syncStatus: postData.serverId == nil ? .localOnly : .sync,
@@ -305,6 +326,7 @@ final class PostRepo: PostRepoType {
             }
     }
     
+    // 대기 중인 삭제 요청 동기화
     private func syncDeletePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
         if postData.createdLocally {
             db.delete(localId: postData.localId)
@@ -330,6 +352,7 @@ final class PostRepo: PostRepoType {
             }
     }
     
+    // MARK: - Utilities
     func isDeleted(serverId: Int) -> Bool {
         return deletedServerIds.contains(serverId)
     }
@@ -347,6 +370,7 @@ final class PostRepo: PostRepoType {
     }
 }
 
+// MARK: - Supporting Types
 private struct PendingPostData {
     let localId: String
     let serverId: Int?
