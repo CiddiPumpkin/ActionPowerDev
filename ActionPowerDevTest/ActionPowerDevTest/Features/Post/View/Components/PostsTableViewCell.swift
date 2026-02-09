@@ -116,8 +116,9 @@ class PostsTableViewCell: UITableViewCell {
                 syncStatusLabel.backgroundColor = .systemOrange
                 syncStatusLabel.text = "연동 필요"
             case .localOnly:
-                // localOnly는 라벨 숨김 (사용자가 생성한 게시글)
-                syncStatusLabel.isHidden = true
+                syncStatusLabel.isHidden = false
+                syncStatusLabel.backgroundColor = .systemBlue
+                syncStatusLabel.text = "오프라인 생성"
             case .fail:
                 syncStatusLabel.isHidden = false
                 syncStatusLabel.backgroundColor = .systemRed
