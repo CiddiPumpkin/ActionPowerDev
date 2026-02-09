@@ -314,9 +314,10 @@ final class PostRepo: PostRepoType {
         return postAPI.createPost(req: request)
             .do(onSuccess: { [weak self] post in
                 print("생성 동기화 성공 - localId: \(postData.localId)")
-                self?.db.update(localId: postData.localId, title: nil, body: nil, serverId: post.id, 
-                               isDeleted: nil, pendingStatus: .none, syncStatus: .sync, 
-                               lastSyncError: nil, updatedDate: Date())
+                // 오프라인에서 생성된 게시글을 삭제
+                self?.db.delete(localId: postData.localId)
+                // createPost API 성공 시와 동일하게 새로 저장
+                self?.savePostToLocal(post, createdLocally: true)
             })
             .map { _ in SyncItemResult(localId: postData.localId, success: true, error: nil) }
             .catch { error in
