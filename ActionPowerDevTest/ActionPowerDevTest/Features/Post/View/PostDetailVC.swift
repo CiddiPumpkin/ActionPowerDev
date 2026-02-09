@@ -269,7 +269,6 @@ class PostDetailVC: UIViewController {
             }
             .observe(on: MainScheduler.instance)
             .subscribe(with: self) { owner, post in
-                print("게시글 수정 성공: \(post)")
                 owner.coordinator?.didUpdatePost()
                 owner.showSuccessAlert(message: "게시글이 수정되었습니다.") {
                     owner.dismiss(animated: true)
@@ -298,14 +297,12 @@ class PostDetailVC: UIViewController {
                         .observe(on: MainScheduler.instance)
                         .subscribe(
                             onNext: { response in
-                                print("게시글 삭제 성공: \(response)")
                                 owner.coordinator?.didDeletePost()
                                 owner.showSuccessAlert(message: "게시글이 삭제되었습니다.") {
                                     owner.dismiss(animated: true)
                                 }
                             },
                             onError: { error in
-                                print("게시글 삭제 오류 - 삭제 대기열에 추가됨: \(error.localizedDescription)")
                                 // 오프라인 삭제의 경우 삭제 대기 상태로 전환됨
                                 owner.coordinator?.didDeletePost()
                                 owner.showInfoAlert(message: "오프라인 상태입니다.\n게시글이 삭제 대기열에 추가되었습니다.") {
