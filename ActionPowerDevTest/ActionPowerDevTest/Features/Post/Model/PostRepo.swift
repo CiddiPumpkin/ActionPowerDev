@@ -14,7 +14,7 @@ protocol PostRepoType {
     func updatePost(localId: String, title: String?, body: String?) -> Single<Post>
     func deletePost(localId: String) -> Single<PostDeleteResponse>
     func getLocalPosts() -> [PostObj]
-    func savePostToLocal(_ post: Post)
+    func savePostToLocal(_ post: Post, createdLocally: Bool)
     func ensurePostInLocal(_ post: Post) -> Post  // API 게시글을 로컬 DB에 저장하고 localId 포함한 Post 반환
     func syncPendingPosts() -> Single<SyncResult>  // 대기 중인 게시글 동기화
     func getDashboardStats() -> DashboardStats  // 대시보드 통계 정보
@@ -59,8 +59,8 @@ final class PostRepo: PostRepoType {
         let request = PostCreateRequest(title: title, body: body, userId: userId)
         return postAPI.createPost(req: request)
             .do(onSuccess: { [weak self] post in
-                // API 성공 시 로컬 DB에 저장
-                self?.savePostToLocal(post)
+                // API 성공 시 로컬 DB에 저장 (createdLocally = true 플래그)
+                self?.savePostToLocal(post, createdLocally: true)
             })
             .catch { [weak self] error in
                 // API 실패 시 오프라인 생성으로 생성
@@ -191,7 +191,7 @@ final class PostRepo: PostRepoType {
     }
     
     /// API로 생성된 게시글을 로컬 DB에 저장
-    func savePostToLocal(_ post: Post) {
+    func savePostToLocal(_ post: Post, createdLocally: Bool = false) {
         let postObj = PostObj()
         postObj.serverId = post.id
         postObj.title = post.title
@@ -201,6 +201,7 @@ final class PostRepo: PostRepoType {
         postObj.isDeleted = false
         postObj.pendingStatus = .none
         postObj.syncStatus = .sync
+        postObj.createdLocally = createdLocally
         
         db.create(postObj)
     }
@@ -216,6 +217,7 @@ final class PostRepo: PostRepoType {
         postObj.isDeleted = false
         postObj.pendingStatus = .create  // 생성 대기 상태
         postObj.syncStatus = .localOnly  // 오프라인 생성
+        postObj.createdLocally = true  // 앱에서 생성
         
         db.create(postObj)
         
@@ -236,8 +238,8 @@ final class PostRepo: PostRepoType {
             return existingPost.toPost()
         }
         
-        // 로컬에 없으면 새로 저장
-        savePostToLocal(post)
+        // 로컬에 없으면 새로 저장 (서버에서 가져온 것이므로 createdLocally = false)
+        savePostToLocal(post, createdLocally: false)
         
         // 저장 후 다시 찾아서 반환 (localId 포함)
         if let savedPost = db.fetchVisibleSortedByCreatedDesc().first(where: { $0.serverId == post.id }) {
@@ -265,7 +267,8 @@ final class PostRepo: PostRepoType {
                 serverId: postObj.serverId,
                 title: postObj.title,
                 body: postObj.body,
-                pendingStatus: postObj.pendingStatus
+                pendingStatus: postObj.pendingStatus,
+                createdLocally: postObj.createdLocally
             )
         }
         
@@ -361,12 +364,21 @@ final class PostRepo: PostRepoType {
     }
     
     private func syncDeletePost(_ postData: PendingPostData) -> Single<SyncItemResult> {
+        // createdLocally == true인 게시글은 앱에서 생성한 것이므로 삭제 API 호출 없이 즉시 로컬에서만 삭제
+        if postData.createdLocally {
+            print("삭제 동기화 - localId: \(postData.localId) (앱에서 생성한 게시글, API 호출 없이 즉시 삭제)")
+            self.db.delete(localId: postData.localId)
+            return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
+        }
+        
+        // serverId가 없으면 한 번도 서버에 동기화되지 않은 게시글이므로 API 호출 없이 즉시 삭제
         guard let serverId = postData.serverId else {
             print("삭제 동기화 - localId: \(postData.localId) (localOnly, API 호출 없이 즉시 삭제)")
             self.db.delete(localId: postData.localId)
             return .just(SyncItemResult(localId: postData.localId, success: true, error: nil))
         }
         
+        // serverId가 있고 createdLocally == false인 게시글은 서버 삭제 API 호출
         return postAPI.deletePost(id: serverId)
             .do(onSuccess: { [weak self] _ in
                 print("삭제 동기화 성공 - localId: \(postData.localId)")
@@ -417,6 +429,7 @@ private struct PendingPostData {
     let title: String
     let body: String
     let pendingStatus: PendingStatus
+    let createdLocally: Bool
 }
 struct SyncResult {
     let success: Int
