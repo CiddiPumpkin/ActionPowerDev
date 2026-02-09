@@ -60,17 +60,13 @@ final class PostVM {
             .flatMapLatest { [weak self] _ -> Observable<SyncResult> in
                 guard let self = self else { return .empty() }
                 
-                print("네트워크 연결됨 - 대기 중인 게시글 동기화 시작")
-                
                 return self.repo.syncPendingPosts()
                     .asObservable()
                     .catch { error in
-                        print("동기화 실패:", error)
                         return .empty()
                     }
             }
             .subscribe(onNext: { [weak self] result in
-                print("동기화 완료 - 성공: \(result.success), 실패: \(result.failed)")
                 self?.syncResultRelay.accept(result)
             })
             .disposed(by: disposeBag)
@@ -148,8 +144,6 @@ final class PostVM {
                 // API 게시글 + 로컬 게시글 병합
                 let mergedPosts = self.mergeWithLocalPosts(apiPosts: updatedApiPosts)
                 postsRelay.accept(mergedPosts)
-                
-                print("페이지 \(self.currentPage) 로드 완료 - 새로 \(newPosts.count)개, 총 \(updatedApiPosts.count)개")
             })
             .disposed(by: disposeBag)
         
@@ -158,10 +152,8 @@ final class PostVM {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] _ in
                 guard let self = self else { return }
-                print("refresh 호출됨")
                 let currentApiPosts = self.apiPostsRelay.value
                 let mergedPosts = self.mergeWithLocalPosts(apiPosts: currentApiPosts)
-                print("병합 완료 - 총 \(mergedPosts.count)개")
                 postsRelay.accept(mergedPosts)
             })
             .disposed(by: disposeBag)
@@ -191,8 +183,6 @@ final class PostVM {
         let localPosts = repo.getLocalPosts()
         let apiPosts = apiPostsRelay.value
         
-        print("getDashboardStats - 로컬: \(localPosts.count)개, API: \(apiPosts.count)개")
-        
         // 전체 게시글 = 로컬 + API (중복 제거)
         let mergedPosts = mergeWithLocalPosts(apiPosts: apiPosts)
         
@@ -208,8 +198,6 @@ final class PostVM {
             .map { $0.toPost() }
             .prefix(5)
         
-        print("통계 - 전체: \(mergedPosts.count), 로컬전용: \(localOnlyPosts.count), 동기화필요: \(needSyncPosts.count), 최근: \(recentPosts.count)")
-        
         return DashboardStats(
             totalCount: mergedPosts.count,
             localOnlyCount: localOnlyPosts.count,
@@ -224,13 +212,6 @@ final class PostVM {
         let localPostObjs = repo.getLocalPosts()
         let localPosts = localPostObjs.map { $0.toPost() }
         
-        print("mergeWithLocalPosts - 로컬: \(localPosts.count)개, API: \(apiPosts.count)개")
-        
-        // 로컬 게시글의 상태 로그
-        for (index, post) in localPosts.enumerated() {
-            print("  [\(index)] localId: \(post.localId ?? "nil"), serverId: \(post.id), syncStatus: \(post.syncStatus?.rawValue ?? "nil"), title: \(post.title)")
-        }
-        
         // 로컬 게시글의 serverId Set
         let localServerIds = Set(localPostObjs.compactMap { $0.serverId })
         
@@ -238,11 +219,6 @@ final class PostVM {
         let filteredApiPosts = apiPosts.filter { post in
             let notInLocal = !localServerIds.contains(post.id)
             let notDeleted = !repo.isDeleted(serverId: post.id)
-            
-            if !notDeleted {
-                print("삭제된 게시글 필터링 - serverId: \(post.id), title: \(post.title)")
-            }
-            
             return notInLocal && notDeleted
         }
         
